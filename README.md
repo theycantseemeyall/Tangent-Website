@@ -1,5 +1,6 @@
 # Tangent Study Dashboard
 A clean study dashboard for tracking subjects, topics, and progress.
+Made by Akosua Ofosu-Hene 05/03/2026
 ## Preview
 <img width="1846" height="901" alt="Dashboard - 001" src="https://github.com/user-attachments/assets/bce23294-f40c-4fbb-9c7c-f3559dcefaae" />
 
@@ -21,6 +22,7 @@ It includes:
 - HTML
 - CSS
 - JavaScript
+- Claude AI (To help finish code)
 
 ## Future Updates
 - Login System
