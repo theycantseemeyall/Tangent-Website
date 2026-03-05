@@ -1,0 +1,4405 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tangent — Dashboard</title>
+
+  <!-- ═══════════════════════════════════════════════════
+       FONTS
+       Playfair Display = headings / titles
+       Source Serif 4   = body / UI text
+       To swap fonts, change the Google Fonts URL below
+       and update font-family references in the CSS.
+  ═══════════════════════════════════════════════════ -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <style>
+
+    /* ═══════════════════════════════════════════════════
+       CUSTOM CURSOR
+       The cursor is drawn as a 16×16 pixel art arrow SVG.
+       To change the cursor shape, edit the SVG path data
+       in the --cursor-url variable below, or replace with
+       a URL to your own .cur / .png file.
+       cursor-hotspot = the click point (x y) in pixels
+    ═══════════════════════════════════════════════════ */
+    :root {
+      --cursor-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpolygon points='2,2 2,16 6,12 9,18 11,17 8,11 14,11' fill='%234c4c4c' stroke='%23ffffff' stroke-width='1.5'/%3E%3C/svg%3E");
+      --cursor-hotspot: 2 2;
+    }
+    /* Dark mode gets a lighter cursor */
+    [data-theme="dark"] {
+      --cursor-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpolygon points='2,2 2,16 6,12 9,18 11,17 8,11 14,11' fill='%23d4e8f8' stroke='%23071624' stroke-width='1.5'/%3E%3C/svg%3E");
+    }
+
+    /* Apply cursor globally — change * to body if you only want it on the page bg */
+    * {
+      cursor: var(--cursor-url) var(--cursor-hotspot), auto !important;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       LIGHT THEME (default)
+       These are the base CSS variables used everywhere.
+       ─────────────────────────────────────────────────
+       --ink          = main text colour
+       --ink-light    = secondary text (labels, etc.)
+       --ink-muted    = disabled / placeholder text
+       --bg           = page background
+       --bg-card      = card / panel background
+       --bg-inset     = inputs, inset wells
+       --sidebar-bg   = left sidebar background
+       --accent       = primary interactive colour
+       --accent-dark  = hover/pressed accent
+       --primary      = soft highlight colour (A9DEF9 light blue)
+       --secondary    = deeper brand blue (2a8bbc)
+       --rule         = dividers / borders
+       --green        = success / high grade
+       --titlebar     = top bar background
+    ═══════════════════════════════════════════════════ */
+    :root {
+      --ink:         #4c4c4c;
+      --ink-light:   #6a6a6a;
+      --ink-muted:   #9a9a9a;
+      --bg:          #fffdfb;
+      --bg-card:     #f5f2ee;
+      --bg-inset:    #ece8e3;
+      --sidebar-bg:  #edeae5;
+      --accent:      #539ec4;
+      --accent-dark: #2a8bbc;
+      --primary:     #A9DEF9;
+      --secondary:   #2a8bbc;
+      --rule:        #dcd8d2;
+      --green:       #3aab6e;
+      --titlebar:    #e6e2dc;
+
+      /* ── Transition speed for theme switching ── */
+      --theme-transition: 0.25s;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       DARK THEME
+       Applied when <html data-theme="dark">
+       Toggle via the 🌙/☀️ button in the title bar.
+    ═══════════════════════════════════════════════════ */
+    [data-theme="dark"] {
+      --ink:         #d4e8f8;
+      --ink-light:   #8bb5d4;
+      --ink-muted:   #4a7190;
+      --bg:          #071624;
+      --bg-card:     #0c2035;
+      --bg-inset:    #091b2e;
+      --sidebar-bg:  #050e1b;
+      --accent:      #3b9eff;
+      --accent-dark: #1a6fd4;
+      --primary:     #3b9eff;
+      --secondary:   #1a6fd4;
+      --rule:        #122840;
+      --green:       #00e080;
+      --titlebar:    #040d1a;
+    }
+
+    /* ── Smooth transitions when theme changes ── */
+    body, .sidebar, .titlebar, .toolbar, .statusbar,
+    .bcard, .folder-item, .detail-panel, .modal-box,
+    .ctx-menu, .t-input, .mini-input, .view-toolbar {
+      transition:
+        background var(--theme-transition),
+        border-color var(--theme-transition),
+        color var(--theme-transition);
+    }
+
+
+    /* ═══════════════════════════════════════════════════
+       BASE LAYOUT
+       The whole page is a flex column:
+         titlebar → toolbar → [sidebar | main | detail] → statusbar
+    ═══════════════════════════════════════════════════ */
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 14px;
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+    }
+
+
+    /* ═══════════════════════════════════════════════════
+       TITLE BAR
+       Mimics a native OS window chrome.
+       Traffic-light buttons: close (red) goes home,
+       min (yellow) and max (green) are cosmetic for now.
+    ═══════════════════════════════════════════════════ */
+    .titlebar {
+      background: var(--titlebar);
+      border-bottom: 1px solid var(--rule);
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      flex-shrink: 0;
+      user-select: none;
+      position: relative;
+      z-index: 50;
+    }
+
+    .titlebar-left { display: flex; align-items: center; gap: 0.5rem; }
+
+    /* ── Traffic light buttons ── */
+    .win-btn {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      border: none;
+      transition: filter 0.15s;
+    }
+    .win-btn:hover { filter: brightness(0.85); }
+    .win-close  { background: #ff5f57; }
+    .win-min    { background: #febc2e; }
+    .win-max    { background: #28c840; }
+
+    /* ── Breadcrumb path in title bar ── */
+    .titlebar-path {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+      margin-left: 1rem;
+    }
+    .titlebar-path span { color: var(--ink-light); }
+    .titlebar-path .sep { color: var(--rule); }
+
+    /* ── Centred app name ── */
+    .titlebar-center {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--ink-muted);
+      letter-spacing: 0.04em;
+      position: absolute;
+      left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .titlebar-center span { color: var(--secondary); }
+
+    /* ── Right cluster: clock + toggles ── */
+    .titlebar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #clock {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--secondary);
+      letter-spacing: 0.1em;
+    }
+    [data-theme="dark"] #clock {
+      color: #00d0f0;
+      text-shadow: 0 0 10px rgba(0,208,240,0.4);
+    }
+
+    /* Small pill buttons in the title bar */
+    .tb-pill {
+      background: transparent;
+      border: 1px solid var(--rule);
+      color: var(--ink-muted);
+      padding: 0.12rem 0.55rem;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      font-family: 'Source Serif 4', serif;
+      transition: all 0.15s;
+      line-height: 1.6;
+    }
+    .tb-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+
+    /* ═══════════════════════════════════════════════════
+       TOOLBAR (address bar row, just below title bar)
+    ═══════════════════════════════════════════════════ */
+    .toolbar {
+      background: var(--sidebar-bg);
+      border-bottom: 1px solid var(--rule);
+      height: 36px;
+      display: flex;
+      align-items: center;
+      padding: 0 0.8rem;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .toolbar-btn {
+      background: none; border: none;
+      color: var(--ink-muted);
+      font-size: 0.82rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      transition: all 0.12s;
+      line-height: 1;
+    }
+    .toolbar-btn:hover { background: var(--rule); color: var(--ink-light); }
+
+    .address-bar {
+      flex: 1;
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      height: 24px;
+      display: flex; align-items: center;
+      padding: 0 0.7rem; gap: 0.4rem;
+      font-size: 0.75rem; color: var(--ink-light);
+    }
+    .address-bar .addr-icon { color: var(--accent); font-size: 0.7rem; }
+
+    .toolbar-search {
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      height: 24px;
+      padding: 0 0.6rem;
+      font-size: 0.75rem;
+      color: var(--ink);
+      font-family: 'Source Serif 4', serif;
+      outline: none;
+      width: 160px;
+      transition: border-color 0.2s;
+    }
+    .toolbar-search::placeholder { color: var(--ink-muted); }
+    .toolbar-search:focus { border-color: var(--accent); }
+
+
+    /* ═══════════════════════════════════════════════════
+       MAIN EXPLORER LAYOUT
+       Three-column flex: sidebar | content | detail panel
+    ═══════════════════════════════════════════════════ */
+    .explorer {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+
+    /* ═══════════════════════════════════════════════════
+       LEFT SIDEBAR
+       Navigation tree + palette controls.
+       Width: 220px (change --sidebar-width to resize)
+    ═══════════════════════════════════════════════════ */
+    :root { --sidebar-width: 220px; }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      flex-shrink: 0;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--rule);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 0.5rem 0;
+    }
+
+    .sidebar::-webkit-scrollbar { width: 3px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+    /* Section heading (e.g. "Quick Access") */
+    .sb-heading {
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      padding: 0.5rem 0.9rem 0.25rem;
+    }
+
+    /* Individual nav item */
+    .sb-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.36rem 0.9rem;
+      font-size: 0.79rem;
+      color: var(--ink-light);
+      border-left: 2px solid transparent;
+      transition: background 0.12s, color 0.12s, border-color 0.12s;
+      white-space: nowrap;
+    }
+    .sb-item:hover { background: var(--rule); color: var(--ink); }
+    .sb-item.active {
+      background: rgba(83,158,196,0.12);
+      color: var(--secondary);
+      border-left-color: var(--secondary);
+      font-weight: 600;
+    }
+    [data-theme="dark"] .sb-item.active {
+      background: rgba(59,158,255,0.1);
+      color: var(--accent);
+      border-left-color: var(--accent);
+    }
+    .sb-item .si { font-size: 0.88rem; flex-shrink: 0; }
+
+    .sb-divider { height: 1px; background: var(--rule); margin: 0.4rem 0.9rem; }
+
+    /* ─────────────────────────────────────
+       GLOBAL PALETTE PANEL (in sidebar)
+       Users pick a palette here to recolour
+       all folders AND optionally the whole UI.
+    ───────────────────────────────────── */
+    .palette-panel {
+      margin: 0.4rem 0.7rem;
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 0.7rem;
+    }
+
+    .palette-panel-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.55rem;
+    }
+
+    /* Preset palette rows — each is a clickable swatch strip */
+    .palette-presets {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .palette-preset {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.28rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .palette-preset:hover { border-color: var(--accent); background: var(--rule); }
+    .palette-preset.active { border-color: var(--secondary); background: rgba(83,158,196,0.1); }
+    [data-theme="dark"] .palette-preset.active { border-color: var(--accent); background: rgba(59,158,255,0.1); }
+
+    /* The mini colour dots in each preset strip */
+    .palette-dots { display: flex; gap: 2px; flex: 1; }
+    .palette-dot  { width: 10px; height: 10px; border-radius: 50%; }
+
+    .palette-preset-name {
+      font-size: 0.66rem;
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Apply to whole site toggle ── */
+    .palette-site-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.5rem;
+    }
+
+    .palette-site-label {
+      font-size: 0.65rem;
+      color: var(--ink-muted);
+    }
+
+    /* Tiny toggle switch */
+    .toggle-wrap { position: relative; width: 28px; height: 15px; }
+    .toggle-wrap input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--rule);
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+    .toggle-wrap input:checked + .toggle-track { background: var(--accent); }
+    .toggle-thumb {
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 11px; height: 11px;
+      background: white;
+      border-radius: 50%;
+      transition: left 0.2s;
+      pointer-events: none;
+    }
+    .toggle-wrap input:checked ~ .toggle-thumb { left: 15px; }
+
+
+    /* ═══════════════════════════════════════════════════
+       MAIN CONTENT AREA
+    ═══════════════════════════════════════════════════ */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Strip just below the toolbar with view controls */
+    .view-bar {
+      height: 30px;
+      border-bottom: 1px solid var(--rule);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      padding: 0 1rem;
+      gap: 0.7rem;
+      flex-shrink: 0;
+    }
+
+    .view-bar-label { font-size: 0.66rem; color: var(--ink-muted); letter-spacing: 0.05em; }
+    .view-btns { display: flex; gap: 0.2rem; margin-left: auto; }
+
+    .view-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--ink-muted);
+      font-size: 0.72rem;
+      padding: 0.18rem 0.45rem;
+      border-radius: 3px;
+      transition: all 0.12s;
+    }
+    .view-btn:hover { border-color: var(--rule); color: var(--ink-light); }
+    .view-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(83,158,196,0.08); }
+    [data-theme="dark"] .view-btn.active { background: rgba(59,158,255,0.08); }
+
+    /* ── New Folder button ── */
+    .btn-new-folder {
+      font-size: 0.68rem;
+      padding: 0.2rem 0.7rem;
+      margin-left: 0.4rem;
+      border-radius: 3px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      font-family: 'Source Serif 4', serif;
+      transition: all 0.15s;
+    }
+    .btn-new-folder:hover { background: var(--accent); color: white; }
+
+    /* Scrollable file area */
+    .content-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.2rem;
+    }
+    .content-scroll::-webkit-scrollbar { width: 5px; }
+    .content-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+
+    /* ═══════════════════════════════════════════════════
+       FOLDER GRID
+       Grid size is controlled by --folder-min-width.
+       Increase to make folders larger, decrease for more columns.
+       Default: 160px → gives ~5 cols on a 900px area.
+    ═══════════════════════════════════════════════════ */
+    :root { --folder-min-width: 160px; }
+
+    .folder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--folder-min-width), 1fr));
+      gap: 1rem;
+      padding: 0.2rem;
+    }
+
+    /* List view overrides */
+    .folder-grid.list-view {
+      grid-template-columns: 1fr;
+      gap: 0.12rem;
+      padding: 0;
+    }
+
+    /* ─────────────────────────────────────
+       FOLDER ITEM
+       Each folder is a card with an SVG body,
+       an emoji/image overlay, and a name label.
+    ───────────────────────────────────── */
+    .folder-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.4rem 0.8rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      gap: 0.65rem;
+      text-align: center;
+      position: relative;
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    }
+
+    .folder-item:hover {
+      background: rgba(169,222,249,0.2);
+      border-color: rgba(83,158,196,0.25);
+      transform: translateY(-2px);
+    }
+    [data-theme="dark"] .folder-item:hover {
+      background: rgba(59,158,255,0.07);
+      border-color: rgba(59,158,255,0.18);
+    }
+
+    .folder-item.selected { background: rgba(169,222,249,0.35); border-color: var(--secondary); }
+    [data-theme="dark"] .folder-item.selected { background: rgba(59,158,255,0.14); border-color: var(--accent); }
+
+    /* ── Folder icon container ──
+       Width/height control icon size.
+       Change --folder-icon-size to scale uniformly.
+    */
+    :root { --folder-icon-size: 100px; }
+
+    .folder-icon-wrap {
+      position: relative;
+      width: var(--folder-icon-size);
+      height: calc(var(--folder-icon-size) * 0.82);
+      flex-shrink: 0;
+    }
+
+    /* SVG folder shape — fills the wrap */
+    .folder-svg { width: 100%; height: 100%; }
+
+    /* ── Custom image ──
+       When a user uploads an image, it completely replaces the
+       folder SVG at exactly the same size as the icon-wrap.
+       The SVG and emoji are hidden; only the image shows.
+       border-radius gives it slightly rounded corners to look
+       like a thumbnail — change to 0 for sharp edges.         */
+    .folder-img-cover {
+      position: absolute;
+      inset: 0;                    /* fill the entire icon-wrap exactly */
+      width: 100%;
+      height: 100%;
+      border-radius: 5px;          /* rounded corners — set to 0 for sharp */
+      object-fit: cover;           /* crop to fill without stretching */
+      display: none;               /* hidden unless .has-image is set */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    /* Show image + hide SVG and emoji when .has-image is present */
+    .folder-item.has-image .folder-img-cover { display: block; }
+    .folder-item.has-image .folder-emoji     { display: none; }
+    .folder-item.has-image .folder-svg       { display: none; }
+
+    /* Emoji overlay centred on folder body */
+    .folder-emoji {
+      position: absolute;
+      top: 52%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: calc(var(--folder-icon-size) * 0.28);
+      line-height: 1;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15));
+    }
+
+    /* Folder name label */
+    .folder-name {
+      font-size: 0.78rem;
+      color: var(--ink-light);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 130px;
+      width: 100%;
+    }
+    .folder-item:hover .folder-name  { color: var(--ink); }
+    .folder-item.selected .folder-name { color: var(--secondary); font-weight: 600; }
+    [data-theme="dark"] .folder-item.selected .folder-name { color: var(--accent); }
+
+    /* ── List view layout overrides ── */
+    .folder-grid.list-view .folder-item {
+      flex-direction: row;
+      padding: 0.3rem 0.6rem;
+      gap: 0.6rem;
+      text-align: left;
+      border-radius: 3px;
+      transform: none;
+    }
+    .folder-grid.list-view .folder-item:hover { transform: none; }
+    .folder-grid.list-view .folder-icon-wrap { width: 22px; height: 18px; --folder-icon-size: 22px; }
+    .folder-grid.list-view .folder-emoji { font-size: 0.62rem; top: 55%; }
+    .folder-grid.list-view .folder-name { font-size: 0.8rem; max-width: none; white-space: nowrap; }
+    /* In list view the icon-wrap shrinks to 22×18px, so the image
+       scales down automatically via inset:0 / width:100% / height:100% */
+    .folder-grid.list-view .folder-img-cover { border-radius: 3px; }
+
+
+    /* ═══════════════════════════════════════════════════
+       DETAIL PANEL (right side)
+       Slides open when a folder is selected.
+       Width controlled by --detail-width.
+    ═══════════════════════════════════════════════════ */
+    :root { --detail-width: 240px; }
+
+    .detail-panel {
+      width: 0;
+      overflow: hidden;
+      border-left: 1px solid var(--rule);
+      background: var(--bg-card);
+      transition: width 0.22s ease;
+      flex-shrink: 0;
+    }
+    .detail-panel.open { width: var(--detail-width); }
+
+    .detail-inner {
+      width: var(--detail-width);
+      padding: 1.1rem;
+      overflow-y: auto;
+      height: 100%;
+    }
+
+    .detail-title { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 600; color: var(--ink); margin-bottom: 0.2rem; }
+    .detail-meta  { font-size: 0.7rem; color: var(--ink-muted); font-style: italic; margin-bottom: 1rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--rule); }
+
+
+    /* ═══════════════════════════════════════════════════
+       STATUS BAR
+    ═══════════════════════════════════════════════════ */
+    .statusbar {
+      height: 22px;
+      background: var(--titlebar);
+      border-top: 1px solid var(--rule);
+      display: flex; align-items: center;
+      padding: 0 1rem; gap: 1.5rem;
+      flex-shrink: 0;
+    }
+    .statusbar span { font-size: 0.62rem; color: var(--ink-muted); letter-spacing: 0.04em; }
+    .status-dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; display: inline-block; margin-right: 0.3rem; }
+
+
+    /* ═══════════════════════════════════════════════════
+       TOOL PANELS
+       Shown in the main area when a folder is opened.
+       Each panel has a header + scrollable body.
+    ═══════════════════════════════════════════════════ */
+    /* homeView lives inside content-scroll */
+    #homeView { display: block; }
+
+    /* Tool panels are siblings to content-scroll inside .main-area
+       When visible they use flex:1 to fill the remaining height.
+       content-scroll is hidden when a panel is showing.           */
+    .tool-panel {
+      display: none;
+      flex-direction: column;
+      flex: 1;          /* fill remaining height in main-area */
+      min-height: 0;    /* allow shrinking inside flex parent  */
+      overflow: hidden;
+    }
+    .tool-panel.visible { display: flex; }
+
+    /* Hide the scroll container when a panel is active */
+    .panel-active .content-scroll { display: none; }
+    .panel-active .view-bar       { display: none; }
+
+    .tp-header {
+      padding: 1rem 1.2rem 0.7rem;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 0.7rem;
+    }
+    .tp-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 600; color: var(--ink); }
+    .tp-sub   { font-size: 0.74rem; color: var(--ink-muted); font-style: italic; }
+
+    .tp-body { flex: 1; overflow-y: auto; padding: 1.2rem; }
+    .tp-body::-webkit-scrollbar { width: 4px; }
+    .tp-body::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+
+    /* ═══════════════════════════════════════════════════
+       SHARED INPUT / BUTTON STYLES
+       Used across all tool panels.
+    ═══════════════════════════════════════════════════ */
+    .t-input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+      background: var(--bg);
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.85rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .t-input::placeholder { color: var(--ink-muted); }
+    .t-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(83,158,196,0.12); }
+    [data-theme="dark"] .t-input:focus { box-shadow: 0 0 0 3px rgba(59,158,255,0.1); }
+
+    .t-btn {
+      padding: 0.45rem 1rem;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+      background: var(--bg-inset);
+      font-size: 0.8rem; font-weight: 600;
+      font-family: 'Source Serif 4', serif;
+      color: var(--ink-light);
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .t-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .t-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .t-btn.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+
+
+    /* ═══════════════════════════════════════════════════
+       POMODORO TOOL
+       Layout (top→bottom):
+         1. Yeolputa stats bar  — total H / M / S recorded
+         2. Subject tabs        — one tab per subject
+         3. Subject detail pane — tasks + session log for selected subject
+         4. Timer ring + controls
+       ─────────────────────────────────────────────────
+       To change the ring size: edit width/height of .pom-ring
+       AND update CIRCUM = 2 × π × r in the JS.
+    ═══════════════════════════════════════════════════ */
+
+    /* ── Yeolputa stats bar ──
+       Big H / M / S tiles across the top, showing all-time totals.
+       Inspired by the Yeolputa study-timer "recorded time" display.  */
+    .pom-stats-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--rule);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .pom-stat-tile {
+      background: var(--bg-card);
+      padding: 0.9rem 1rem 0.7rem;
+      text-align: center;
+    }
+
+    .pom-stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--secondary);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    [data-theme="dark"] .pom-stat-num { color: #00d0f0; text-shadow: 0 0 10px rgba(0,208,240,0.3); }
+
+    .pom-stat-unit {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ── Subject tabs row ── */
+    .pom-subject-bar {
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.9rem;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .pom-subject-tab {
+      padding: 0.28rem 0.75rem;
+      border-radius: 20px;
+      border: 1px solid var(--rule);
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+      background: var(--bg-inset);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .pom-subject-tab:hover { border-color: var(--accent); color: var(--accent); }
+    .pom-subject-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+
+    /* Add subject button pill */
+    .pom-add-subject-btn {
+      padding: 0.25rem 0.65rem;
+      border-radius: 20px;
+      border: 1px dashed var(--rule);
+      font-size: 0.72rem;
+      color: var(--ink-muted);
+      background: transparent;
+      font-family: 'Source Serif 4', serif;
+      transition: all 0.15s;
+    }
+    .pom-add-subject-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Main timer area ── */
+    .pom-main {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* Left: ring + controls */
+    .pom-timer-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* Change r="80" in the SVG + CIRCUM in JS if you resize */
+    .pom-ring { position: relative; width: 180px; height: 180px; }
+    .pom-ring svg { width: 180px; height: 180px; transform: rotate(-90deg); }
+
+    /* All circles default to no fill, no stroke */
+    .pom-ring circle { fill: none; stroke: none; stroke-linecap: round; }
+
+    /* Inner fill circle — sits behind the text, matches the page bg */
+    .pom-ring .ring-fill {
+      fill: var(--bg);
+      stroke: none;
+      /* No transition needed — just a solid background */
+    }
+
+    /* Track ring */
+    .pom-ring .bg {
+      stroke: var(--rule);
+      stroke-width: 10;
+    }
+
+    /* Progress arc */
+    .pom-ring .progress {
+      stroke: var(--accent);
+      stroke-width: 10;
+      stroke-dasharray: 502.65;   /* 2π × 80 — update if r changes */
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.5s linear;
+      filter: drop-shadow(0 0 5px rgba(83,158,196,0.35));
+    }
+    [data-theme="dark"] .pom-ring .progress {
+      filter: drop-shadow(0 0 7px rgba(59,158,255,0.6));
+    }
+
+    /* Time text — centred over the ring, no background needed
+       because ring-fill gives it a clean surface to sit on  */
+    .pom-time {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -52%);  /* slight upward nudge to optically centre with label */
+      font-family: 'Playfair Display', serif;
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--secondary);
+      text-align: center;
+      line-height: 1;
+      /* No border, no background, no box-shadow */
+      background: none;
+      border: none;
+      outline: none;
+    }
+    [data-theme="dark"] .pom-time {
+      color: #00d0f0;
+      text-shadow: 0 0 12px rgba(0,208,240,0.35);
+    }
+
+    /* "focus" / "break" label below the time, inside the ring */
+    .pom-ring-label {
+      position: absolute;
+      top: 60%; left: 50%;
+      transform: translate(-50%, 0);
+      font-size: 0.56rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      white-space: nowrap;
+    }
+
+    /* Right: subject detail pane */
+    .pom-detail-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      min-width: 0;
+      overflow-y: auto;
+      max-height: 340px;
+    }
+    .pom-detail-col::-webkit-scrollbar { width: 3px; }
+    .pom-detail-col::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+    /* "No subject selected" placeholder */
+    .pom-no-subject {
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+      font-style: italic;
+      padding: 1rem 0;
+    }
+
+    /* Subject name + total time header */
+    .pom-subject-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .pom-subject-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .pom-subject-total {
+      font-size: 0.72rem;
+      color: var(--accent);
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+    }
+
+    /* Session log — list of past sessions */
+    .pom-session-log { list-style: none; display: flex; flex-direction: column; gap: 0; }
+    .pom-session-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0.42rem 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 0.78rem;
+      gap: 0.6rem;
+    }
+    .pom-session-entry:last-child { border-bottom: none; }
+    .pom-session-note { color: var(--ink-light); flex: 1; }
+    .pom-session-dur  { color: var(--accent); font-family: 'Playfair Display', serif; font-weight: 600; flex-shrink: 0; }
+    .pom-session-del  { background: none; border: none; font-size: 0.7rem; color: var(--ink-muted); flex-shrink: 0; }
+    .pom-session-del:hover { color: #e05050; }
+
+    /* Linked to-do items under subject */
+    .pom-linked-todos { display: flex; flex-direction: column; gap: 0; }
+    .pom-linked-todo {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 0.78rem;
+      color: var(--ink-light);
+    }
+    .pom-linked-todo:last-child { border-bottom: none; }
+    .pom-linked-todo.done { text-decoration: line-through; color: var(--ink-muted); }
+    .pom-linked-chk {
+      width: 12px; height: 12px; flex-shrink: 0;
+      border: 1.5px solid var(--rule); border-radius: 3px;
+      transition: all 0.15s; background: transparent;
+    }
+    .pom-linked-todo.done .pom-linked-chk { background: var(--green); border-color: var(--green); }
+
+    /* Section micro-heading inside detail pane */
+    .pom-detail-section {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    /* What-did-you-study input (shown when session finishes) */
+    .pom-study-note-row { display: flex; gap: 0.4rem; }
+
+
+    /* ═══════════════════════════════════════════════════
+       TODO TOOL
+    ═══════════════════════════════════════════════════ */
+    .todo-list { list-style: none; }
+    .todo-list li {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 0.85rem; color: var(--ink-light);
+    }
+    .todo-list li:last-child { border-bottom: none; }
+    .todo-list li .tl-del, .todo-list li .tl-ren {
+      background: none; border: none; font-size: 0.75rem;
+      color: var(--ink-muted); transition: color 0.15s;
+    }
+    .todo-list li .tl-del:hover { color: #e05050; }
+    .todo-list li .tl-ren:hover { color: var(--accent); }
+    .todo-list li .tl-spacer { flex: 1; }
+
+
+    /* ═══════════════════════════════════════════════════
+       GRADES TOOL
+    ═══════════════════════════════════════════════════ */
+    .grade-rows { display: flex; flex-direction: column; }
+    .grade-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.5rem 0; border-bottom: 1px solid var(--rule); font-size: 0.85rem;
+    }
+    .grade-row:last-child { border-bottom: none; }
+    .gscore { font-family: 'Playfair Display', serif; font-weight: 600; }
+    .gscore.high { color: var(--green); }
+    .gscore.mid  { color: var(--accent); }
+    .gscore.low  { color: #e05050; }
+
+
+    /* ═══════════════════════════════════════════════════
+       CALENDAR TOOL
+    ═══════════════════════════════════════════════════ */
+    .cal-month { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600; color: var(--secondary); margin-bottom: 0.7rem; }
+    [data-theme="dark"] .cal-month { color: var(--accent); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+    .cal-wd   { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); text-align: center; padding: 0.2rem 0; }
+    .cal-grid div {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      font-size: 0.76rem; border-radius: 4px; color: var(--ink-muted);
+      transition: background 0.12s;
+    }
+    .cal-grid div:hover { background: var(--rule); color: var(--ink-light); }
+    .cal-grid div.today {
+      background: var(--accent); color: white; font-weight: 700;
+      border-radius: 50%; box-shadow: 0 0 8px rgba(83,158,196,0.4);
+    }
+    [data-theme="dark"] .cal-grid div.today { box-shadow: 0 0 12px rgba(59,158,255,0.5); }
+
+
+    /* ═══════════════════════════════════════════════════
+       CONTEXT MENU (right-click on folder)
+    ═══════════════════════════════════════════════════ */
+    .ctx-menu {
+      position: fixed; z-index: 800;
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      padding: 0.3rem 0;
+      min-width: 170px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      display: none;
+    }
+    [data-theme="dark"] .ctx-menu { box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .ctx-menu.open { display: block; }
+
+    .ctx-item {
+      padding: 0.4rem 1rem;
+      font-size: 0.78rem; color: var(--ink-light);
+      display: flex; align-items: center; gap: 0.5rem;
+      transition: background 0.1s;
+    }
+    .ctx-item:hover { background: rgba(83,158,196,0.1); color: var(--ink); }
+    [data-theme="dark"] .ctx-item:hover { background: rgba(59,158,255,0.1); }
+    .ctx-sep { height: 1px; background: var(--rule); margin: 0.2rem 0; }
+    .ctx-danger { color: #e05050 !important; }
+    .ctx-danger:hover { background: rgba(224,80,80,0.08) !important; }
+
+
+    /* ═══════════════════════════════════════════════════
+       MODAL / OVERLAY
+       Used for: Customise Folder, New Folder
+    ═══════════════════════════════════════════════════ */
+    .modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(200,195,188,0.55);
+      backdrop-filter: blur(6px);
+      z-index: 900;
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    [data-theme="dark"] .modal-bg { background: rgba(4,12,26,0.82); }
+    .modal-bg.open { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-top: 2px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.5rem;
+      width: 100%; max-width: 420px;
+      max-height: 90vh; overflow-y: auto;
+      position: relative;
+      transform: scale(0.97) translateY(8px);
+      transition: transform 0.2s;
+    }
+    .modal-bg.open .modal-box { transform: scale(1) translateY(0); }
+
+    .modal-close {
+      position: absolute; top: 0.75rem; right: 0.75rem;
+      background: var(--bg-inset); border: 1px solid var(--rule);
+      color: var(--ink-muted); width: 22px; height: 22px;
+      border-radius: 3px; font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { color: var(--ink); border-color: var(--ink-muted); }
+
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 600; color: var(--ink); margin-bottom: 1.1rem; }
+
+    /* Section labels inside modal */
+    .m-label {
+      font-size: 0.62rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--ink-muted);
+      margin-bottom: 0.45rem; margin-top: 0.9rem;
+      display: block;
+    }
+
+    /* ─── EMOJI PICKER ── */
+    .emoji-grid {
+      display: grid; grid-template-columns: repeat(8,1fr); gap: 0.3rem;
+    }
+    .emoji-opt {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; border-radius: 4px; border: 1px solid transparent;
+      transition: all 0.12s;
+    }
+    .emoji-opt:hover { background: var(--rule); }
+    .emoji-opt.sel { border-color: var(--accent); background: rgba(83,158,196,0.12); }
+
+    /* ─── COLOUR PALETTE PICKER ── */
+    /* Per-folder colour swatches */
+    .colour-grid { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .colour-sw {
+      width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
+      transition: transform 0.12s, border-color 0.12s;
+    }
+    .colour-sw:hover { transform: scale(1.18); }
+    .colour-sw.sel { border-color: var(--ink); }
+
+    /* Hex input for custom colour */
+    .colour-hex-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.5rem; }
+    .colour-preview-dot { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--rule); flex-shrink: 0; }
+
+    /* ─── IMAGE UPLOAD ZONE ── */
+    .img-upload-zone {
+      border: 1.5px dashed var(--rule);
+      border-radius: 5px;
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--ink-muted);
+      font-style: italic;
+      transition: border-color 0.2s;
+      margin-top: 0.3rem;
+    }
+    .img-upload-zone:hover { border-color: var(--accent); }
+    .img-upload-zone .upload-icon { font-size: 1.4rem; margin-bottom: 0.3rem; }
+
+    /* Image preview thumbnail */
+    .img-thumb {
+      width: 60px; height: 48px; object-fit: cover;
+      border-radius: 4px; border: 1px solid var(--rule);
+      margin-top: 0.5rem;
+      display: none;
+    }
+    .img-thumb.visible { display: block; }
+
+
+    /* ═══════════════════════════════════════════════════
+       THEME EDITOR MODAL
+       Full custom theme editor — edit any CSS variable.
+       ─────────────────────────────────────────────────
+       .theme-modal-bg  = backdrop overlay (separate from
+                          the folder customise modal so they
+                          can coexist without z-index fights)
+       .theme-modal-box = the editor panel itself
+    ═══════════════════════════════════════════════════ */
+    .theme-modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(200,195,188,0.55);
+      backdrop-filter: blur(6px);
+      z-index: 950;                    /* above ctx menu (800) and customise modal (900) */
+      display: flex; align-items: center; justify-content: center;
+      padding: 1.5rem;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    [data-theme="dark"] .theme-modal-bg { background: rgba(4,12,26,0.85); }
+    .theme-modal-bg.open { opacity: 1; pointer-events: all; }
+
+    .theme-modal-box {
+      background: var(--bg);
+      border: 1px solid var(--rule);
+      border-top: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 1.5rem;
+      width: 100%; max-width: 500px;
+      max-height: 90vh; overflow-y: auto;
+      position: relative;
+      transform: scale(0.97) translateY(8px);
+      transition: transform 0.2s;
+    }
+    .theme-modal-bg.open .theme-modal-box { transform: scale(1) translateY(0); }
+
+    .theme-modal-box::-webkit-scrollbar { width: 4px; }
+    .theme-modal-box::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+    /* Each row = label + colour picker + hex input */
+    .theme-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--rule);
+    }
+    .theme-row:last-of-type { border-bottom: none; }
+
+    .theme-var-label {
+      font-size: 0.76rem;
+      color: var(--ink-light);
+      font-family: 'Source Serif 4', serif;
+    }
+    .theme-var-desc {
+      font-size: 0.62rem;
+      color: var(--ink-muted);
+      font-style: italic;
+      margin-top: 1px;
+    }
+
+    /* Native colour picker — styled to look consistent */
+    .theme-colour-input {
+      width: 32px; height: 28px;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+      padding: 2px;
+      background: var(--bg-inset);
+      flex-shrink: 0;
+    }
+    .theme-colour-input::-webkit-color-swatch-wrapper { padding: 0; }
+    .theme-colour-input::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+    /* Hex text box next to colour picker */
+    .theme-hex-input {
+      width: 82px;
+      padding: 0.28rem 0.5rem;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+      background: var(--bg-inset);
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.74rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .theme-hex-input:focus { border-color: var(--accent); }
+
+    /* Section group header inside editor */
+    .theme-group {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin: 0.9rem 0 0.3rem;
+      padding-bottom: 0.2rem;
+      border-bottom: 1px dashed var(--rule);
+    }
+
+    /* Preset quick-apply buttons inside editor */
+    .theme-preset-bar {
+      display: flex; flex-wrap: wrap; gap: 0.35rem;
+      margin-bottom: 0.8rem;
+    }
+    .theme-preset-btn {
+      padding: 0.25rem 0.6rem;
+      border-radius: 3px;
+      border: 1px solid var(--rule);
+      font-size: 0.68rem;
+      font-family: 'Source Serif 4', serif;
+      color: var(--ink-light);
+      background: var(--bg-inset);
+      transition: all 0.14s;
+    }
+    .theme-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Live preview strip at the top of the editor */
+    .theme-preview-strip {
+      display: flex; gap: 0.4rem;
+      padding: 0.6rem; border-radius: 5px;
+      border: 1px solid var(--rule);
+      background: var(--bg-inset);
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .theme-preview-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.08);
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .theme-preview-label {
+      font-size: 0.62rem; color: var(--ink-muted); font-style: italic; margin-left: auto;
+    }
+
+    /* Save / reset buttons row */
+    .theme-actions {
+      display: flex; gap: 0.5rem; margin-top: 1.2rem;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       REVISION TOOL
+    ═══════════════════════════════════════════════════ */
+    .rev-feature-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.7rem; }
+    .rev-feature {
+      background: var(--bg-inset); border: 1px solid var(--rule);
+      border-radius: 5px; padding: 0.8rem; text-align: center;
+    }
+    .rev-feature-icon { font-size: 1.1rem; margin-bottom: 0.3rem; }
+    .rev-feature-name { font-size: 0.7rem; font-weight: 600; color: var(--ink-light); margin-bottom: 0.15rem; }
+    .rev-feature-desc { font-size: 0.65rem; color: var(--ink-muted); }
+
+
+    /* ═══════════════════════════════════════════════════
+       DASHBOARD SECTIONS
+       Two labelled sections on the home view:
+         Quick Access (tool folders) and Subjects (subject folders)
+       ─────────────────────────────────────────────────
+       --dash-section-gap: space between the two sections
+    ═══════════════════════════════════════════════════ */
+    .dash-section {
+      margin-bottom: 1.8rem;
+    }
+
+    .dash-section-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.64rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 0.9rem;
+    }
+
+    .dash-section-icon { font-size: 0.78rem; }
+
+    .dash-section-count {
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      font-size: 0.58rem;
+      padding: 0.08rem 0.4rem;
+      color: var(--ink-muted);
+      letter-spacing: 0;
+    }
+
+    /* "+ Add Subject" pill in section heading */
+    .dash-section-add {
+      margin-left: auto;
+      padding: 0.18rem 0.6rem;
+      border-radius: 3px;
+      border: 1px dashed var(--accent);
+      font-size: 0.64rem;
+      font-family: 'Source Serif 4', serif;
+      color: var(--accent);
+      background: transparent;
+      letter-spacing: 0.02em;
+      transition: all 0.15s;
+    }
+    .dash-section-add:hover { background: var(--accent); color: white; }
+
+    /* ═══════════════════════════════════════════════════
+       REVISION NOTES
+       Each note is a row with thumbnail + meta + actions.
+    ═══════════════════════════════════════════════════ */
+    .rev-note-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      background: var(--bg-card);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .rev-note-row:hover { border-color: var(--accent); background: var(--bg-inset); }
+
+    /* Thumbnail / type badge */
+    .rev-note-thumb {
+      width: 38px; height: 38px;
+      border-radius: 4px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid var(--rule);
+    }
+    .rev-note-type-badge {
+      width: 38px; height: 38px;
+      border-radius: 4px;
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .rev-note-meta { flex: 1; min-width: 0; }
+    .rev-note-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .rev-note-tags {
+      display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.2rem;
+    }
+    .rev-note-tag {
+      font-size: 0.6rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 8px;
+      border: 1px solid var(--rule);
+      color: var(--ink-muted);
+      background: var(--bg-inset);
+      white-space: nowrap;
+    }
+    .rev-note-tag.subject { border-color: var(--accent); color: var(--accent); }
+    .rev-note-tag.category { border-color: var(--secondary); color: var(--secondary); }
+    [data-theme="dark"] .rev-note-tag.category { border-color: var(--primary); color: var(--primary); }
+
+    .rev-note-date { font-size: 0.62rem; color: var(--ink-muted); margin-top: 0.1rem; }
+
+    .rev-note-actions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .rev-note-btn {
+      background: none; border: 1px solid var(--rule);
+      border-radius: 3px; padding: 0.2rem 0.45rem;
+      font-size: 0.68rem; color: var(--ink-muted);
+      transition: all 0.12s;
+    }
+    .rev-note-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .rev-note-btn.del:hover { border-color: #e05050; color: #e05050; }
+
+    /* ═══════════════════════════════════════════════════
+       SUBJECT OVERVIEW PANEL
+       Data card grid shown when a subject is opened.
+    ═══════════════════════════════════════════════════ */
+
+    /* Each data card inside the subject panel */
+    .subj-card {
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+    }
+
+    /* Card heading row */
+    .subj-card-title {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Big stat number inside a card */
+    .subj-card-stat {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--secondary);
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    [data-theme="dark"] .subj-card-stat { color: #00d0f0; }
+
+    .subj-card-meta {
+      font-size: 0.7rem;
+      color: var(--ink-muted);
+      font-style: italic;
+    }
+
+    /* Span the pomodoro / tasks card full width */
+    .subj-card.wide { grid-column: span 2; }
+
+    /* Compact list inside subject cards */
+    .subj-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
+    .subj-list li {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 0.78rem;
+      color: var(--ink-light);
+    }
+    .subj-list li:last-child { border-bottom: none; }
+    .subj-list li .subj-li-val {
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+    }
+    .subj-list li .subj-li-val.high { color: var(--green); }
+    .subj-list li .subj-li-val.mid  { color: var(--accent); }
+    .subj-list li .subj-li-val.low  { color: #e05050; }
+
+    /* Empty state label */
+    .subj-empty {
+      font-size: 0.74rem;
+      color: var(--ink-muted);
+      font-style: italic;
+    }
+
+    /* Subject panel emoji/colour picker badge in header */
+    .subj-header-actions {
+      display: flex; gap: 0.4rem; margin-left: auto;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════
+       TITLE BAR
+  ═══════════════════════════════════════════════════ -->
+  <div class="titlebar">
+
+    <!-- Traffic light + breadcrumb -->
+    <div class="titlebar-left">
+      <button class="win-btn win-close" onclick="window.location.href='index.html'" title="Back to home"></button>
+      <button class="win-btn win-min"></button>
+      <button class="win-btn win-max"></button>
+      <div class="titlebar-path">
+        <span>Tangent</span>
+        <span class="sep">›</span>
+        <span id="pathLabel">Dashboard</span>
+      </div>
+    </div>
+
+    <!-- Centred app name -->
+    <div class="titlebar-center">Tangent<span>.</span></div>
+
+    <!-- Clock + theme/format toggles -->
+    <div class="titlebar-right">
+      <span id="clock">--:--:--</span>
+      <!-- 24H/12H format toggle — edit label text to change display -->
+      <button class="tb-pill" id="fmtToggle">24H</button>
+      <!-- Dark mode toggle — 🌙 = switch to dark, ☀️ = switch to light -->
+      <button class="tb-pill" id="themeToggle">🌙</button>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       TOOLBAR (address bar row)
+  ═══════════════════════════════════════════════════ -->
+  <div class="toolbar">
+    <button class="toolbar-btn" onclick="showHome()" title="Home">⌂</button>
+    <div class="address-bar">
+      <span class="addr-icon">📁</span>
+      <span id="addressText">Tangent / Dashboard</span>
+    </div>
+    <!-- Search filters visible folders in real time -->
+    <input class="toolbar-search" id="searchInput" placeholder="🔍 Search…" />
+    <!-- Toggle detail panel open/close -->
+    <button class="toolbar-btn" onclick="toggleDetail()" title="Toggle info panel">⊟</button>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       EXPLORER BODY
+  ═══════════════════════════════════════════════════ -->
+  <div class="explorer">
+
+
+    <!-- ═══════════════════════════════════════════
+         LEFT SIDEBAR
+    ═══════════════════════════════════════════ -->
+    <div class="sidebar">
+
+      <!-- Quick-access nav links — clicking jumps straight to that tool -->
+      <div class="sb-heading">Quick Access</div>
+      <div class="sb-item active" data-nav="home"     onclick="sideNav(this,'home')">     <span class="si">🏠</span> Dashboard</div>
+      <div class="sb-item"        data-nav="pomodoro" onclick="sideNav(this,'pomodoro')"> <span class="si">⏱</span> Pomodoro</div>
+      <div class="sb-item"        data-nav="todo"     onclick="sideNav(this,'todo')">     <span class="si">📝</span> To-Do</div>
+      <div class="sb-item"        data-nav="grades"   onclick="sideNav(this,'grades')">   <span class="si">📊</span> Grades</div>
+      <div class="sb-item"        data-nav="calendar" onclick="sideNav(this,'calendar')"> <span class="si">📅</span> Calendar</div>
+      <div class="sb-item"        data-nav="revision" onclick="sideNav(this,'revision')"> <span class="si">📘</span> Revision</div>
+
+      <div class="sb-divider"></div>
+
+      <!-- ── SUBJECTS ──
+           Populated dynamically from pomSubjects array.
+           Each subject gets its own sidebar entry.
+           Clicking opens a subject overview panel.      -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.9rem 0.25rem">
+        <div class="sb-heading" style="padding:0">Subjects</div>
+        <button onclick="openAddSubjectSidebar()" title="Add subject"
+                style="background:none;border:none;color:var(--ink-muted);font-size:0.75rem;line-height:1;transition:color 0.15s"
+                onmouseenter="this.style.color='var(--accent)'"
+                onmouseleave="this.style.color='var(--ink-muted)'">＋</button>
+      </div>
+
+      <!-- Inline add-subject form in sidebar -->
+      <div id="sbAddSubjectForm" style="display:none;flex-direction:column;gap:0.3rem;padding:0.2rem 0.7rem 0.4rem">
+        <input type="text" id="sbSubjectInput" class="t-input"
+               placeholder="Subject name…"
+               style="height:26px;font-size:0.76rem;padding:0.2rem 0.5rem" />
+        <div style="display:flex;gap:0.3rem">
+          <button class="t-btn primary" onclick="confirmAddSubjectSidebar()"
+                  style="flex:1;height:24px;font-size:0.7rem;padding:0">Add</button>
+          <button class="t-btn" onclick="cancelAddSubjectSidebar()"
+                  style="height:24px;font-size:0.7rem;padding:0 0.4rem">✕</button>
+        </div>
+      </div>
+
+      <!-- Subject items rendered here by JS -->
+      <div id="sbSubjectList"></div>
+
+      <div class="sb-divider"></div>
+
+      <!-- System shortcuts -->
+      <div class="sb-heading">System</div>
+      <div class="sb-item" onclick="window.location.href='index.html'"><span class="si">🏡</span> Home Page</div>
+      <div class="sb-item" onclick="openCustomise(null)"><span class="si">🎨</span> New Folder</div>
+      <!-- Custom Theme button — opens the full theme editor modal -->
+      <div class="sb-item" onclick="openThemeEditor()"><span class="si">🖌️</span> Custom Theme</div>
+
+      <div class="sb-divider"></div>
+
+      <!-- ─────────────────────────────────────────────
+           GLOBAL PALETTE PANEL
+           Click a preset strip to recolour ALL folders.
+           Toggle "Apply to site" to also shift the UI accent.
+           ─────────────────────────────────────────── -->
+      <div class="sb-heading">Colour Palette</div>
+      <div class="palette-panel">
+        <div class="palette-panel-title">Folder themes</div>
+
+        <!-- Preset palette strips — each defined in PALETTES array in JS.
+             To add a palette, push a new entry to the PALETTES array below. -->
+        <div class="palette-presets" id="palettePresets">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- When checked, the first colour of the chosen palette also
+             updates --accent / --accent-dark on the whole site -->
+        <div class="palette-site-row">
+          <span class="palette-site-label">Apply accent to site</span>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="siteThemeToggle" />
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+
+      </div><!-- /palette-panel -->
+
+    </div><!-- /sidebar -->
+
+
+    <!-- ═══════════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════════ -->
+    <div class="main-area">
+
+      <!-- View switcher + new folder button -->
+      <div class="view-bar">
+        <span class="view-bar-label" id="viewLabel">5 items</span>
+        <div class="view-btns">
+          <button class="view-btn active" id="vGrid" onclick="setView('grid')">⊞ Grid</button>
+          <button class="view-btn"        id="vList" onclick="setView('list')">≡ List</button>
+          <button class="btn-new-folder"  onclick="openCustomise(null)">+ New Folder</button>
+        </div>
+      </div>
+
+      <!-- ── SCROLLABLE FILE AREA ── -->
+      <div class="content-scroll" id="contentScroll">
+
+        <!-- ═══════════════════════════════════════════════════
+             HOME VIEW — split into two sections like a real file explorer
+             Section A: Quick Access — the 5 tool folders (fixed)
+             Section B: Subjects     — one folder per subject (dynamic)
+                        Each subject folder opens into its subject panel
+             ─────────────────────────────────────────────────────────
+             To change section heading style: edit .dash-section-heading
+             To change the subject folder colour default: edit SUBJ_DEFAULT_COLOUR in JS
+        ═══════════════════════════════════════════════════ -->
+        <div id="homeView">
+
+          <!-- SECTION A: Quick Access -->
+          <div class="dash-section">
+            <div class="dash-section-heading">
+              <span class="dash-section-icon">⚡</span> Quick Access
+              <span class="dash-section-count" id="qaCount"></span>
+            </div>
+            <!-- Tool folders rendered here -->
+            <div class="folder-grid" id="folderGrid"></div>
+          </div>
+
+          <!-- SECTION B: Subjects -->
+          <div class="dash-section">
+            <div class="dash-section-heading">
+              <span class="dash-section-icon">📚</span> Subjects
+              <span class="dash-section-count" id="subjCount"></span>
+              <!-- Add subject directly from dashboard -->
+              <button class="dash-section-add" onclick="openAddSubjectSidebar()"
+                      title="Add subject">＋ Add Subject</button>
+            </div>
+            <!-- Subject folders rendered here -->
+            <div class="folder-grid" id="subjectFolderGrid"></div>
+            <!-- Empty state -->
+            <div id="subjectFolderEmpty"
+                 style="display:none;font-size:0.8rem;color:var(--ink-muted);font-style:italic;padding:0.8rem 0.2rem">
+              No subjects yet — click ＋ Add Subject to get started
+            </div>
+          </div>
+
+        </div>
+
+
+      </div><!-- /content-scroll -->
+
+      <!-- ── TOOL PANELS (siblings to content-scroll, fill main-area height) ──
+           Each panel uses flex:1 so it fills the available vertical space.
+           They are hidden via display:none / display:flex toggling. -->
+<!-- ═══════════════════════════════════════════════════
+             POMODORO PANEL
+             Layout:
+               ① Yeolputa stats bar  — all-time H / M / S
+               ② Subject tab bar     — one pill per subject
+               ③ pom-main row:
+                    LEFT  → ring timer + Start/Reset/Skip
+                    RIGHT → selected subject detail
+                           (session log + linked to-dos)
+             Data lives in pomSubjects[] array in JS.
+        ═══════════════════════════════════════════════════ -->
+        <div class="tool-panel" id="panel-pomodoro">
+          <div class="tp-header">
+            <span style="font-size:1.3rem">⏱</span>
+            <div>
+              <div class="tp-title">Pomodoro Timer</div>
+              <div class="tp-sub">Track study time by subject</div>
+            </div>
+          </div>
+
+          <div class="tp-body" style="display:flex;flex-direction:column;gap:0;overflow:hidden">
+
+            <!-- ① YEOLPUTA STATS BAR
+                 Shows cumulative hours / minutes / seconds across ALL subjects.
+                 Numbers update after every completed session.           -->
+            <div class="pom-stats-bar">
+              <div class="pom-stat-tile">
+                <div class="pom-stat-num" id="statHours">00</div>
+                <div class="pom-stat-unit">Hours</div>
+              </div>
+              <div class="pom-stat-tile">
+                <div class="pom-stat-num" id="statMins">00</div>
+                <div class="pom-stat-unit">Minutes</div>
+              </div>
+              <div class="pom-stat-tile">
+                <div class="pom-stat-num" id="statSecs">00</div>
+                <div class="pom-stat-unit">Seconds</div>
+              </div>
+            </div>
+
+            <!-- ② SUBJECT TAB BAR
+                 One pill per subject. Click to select.
+                 "+ Subject" opens the add-subject inline form.    -->
+            <div class="pom-subject-bar" id="pomSubjectBar">
+              <!-- rendered by JS -->
+              <button class="pom-add-subject-btn" id="pomAddSubjectBtn">+ Subject</button>
+            </div>
+
+            <!-- Inline add-subject form (hidden by default) -->
+            <div id="pomAddSubjectForm" style="display:none;gap:0.4rem;margin-bottom:0.7rem;align-items:center">
+              <input type="text" class="t-input" id="pomSubjectNameInput"
+                     placeholder="Subject name e.g. Biology"
+                     style="flex:1;height:30px;font-size:0.8rem;padding:0.3rem 0.6rem" />
+              <button class="t-btn primary" id="pomSubjectConfirm"
+                      style="height:30px;font-size:0.75rem;padding:0 0.7rem">Add</button>
+              <button class="t-btn" id="pomSubjectCancel"
+                      style="height:30px;font-size:0.75rem;padding:0 0.7rem">✕</button>
+            </div>
+
+            <!-- ③ MAIN TIMER + DETAIL ROW -->
+            <div class="pom-main">
+
+              <!-- LEFT: ring timer -->
+              <div class="pom-timer-col">
+
+                <!-- SVG ring — r="80", CIRCUM = 2π×80 ≈ 502.65 in JS -->
+                <div class="pom-ring" id="pomRing">
+                  <svg viewBox="0 0 180 180">
+                    <!-- Solid fill behind the text so nothing bleeds through -->
+                    <circle class="ring-fill" cx="90" cy="90" r="73"/>
+                    <circle class="bg"       cx="90" cy="90" r="80"/>
+                    <circle class="progress" cx="90" cy="90" r="80"/>
+                  </svg>
+                  <div class="pom-time" id="pomDisplay">25:00</div>
+                  <div class="pom-ring-label" id="pomRingLabel">focus</div>
+                </div>
+
+                <!-- Current subject badge shown under ring -->
+                <div id="pomActiveSubjectBadge"
+                     style="font-size:0.72rem;color:var(--ink-muted);font-style:italic;text-align:center;min-height:1rem"></div>
+
+                <!-- Timer control buttons -->
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center">
+                  <button class="t-btn primary" id="pomStart">▶ Start</button>
+                  <button class="t-btn"         id="pomReset">↺ Reset</button>
+                  <button class="t-btn"         id="pomSkip" title="Mark session done without waiting">⏭ Skip</button>
+                </div>
+
+                <!-- Session duration selector
+                     To change available durations edit the options below. -->
+                <div style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;color:var(--ink-muted)">
+                  <span>Duration:</span>
+                  <select id="pomDuration" class="t-input"
+                          style="width:auto;height:26px;font-size:0.72rem;padding:0 0.4rem">
+                    <option value="25">25 min</option>
+                    <option value="50">50 min</option>
+                    <option value="90">90 min</option>
+                    <option value="5">5 min (break)</option>
+                    <option value="15">15 min (break)</option>
+                  </select>
+                </div>
+
+              </div><!-- /pom-timer-col -->
+
+              <!-- RIGHT: subject detail pane -->
+              <div class="pom-detail-col" id="pomDetailCol">
+                <div class="pom-no-subject" id="pomNoSubject">
+                  Select or add a subject to start tracking time →
+                </div>
+                <!-- Subject detail rendered here by renderPomDetail() -->
+              </div>
+
+            </div><!-- /pom-main -->
+
+          </div><!-- /tp-body -->
+        </div>
+
+        <!-- TO-DO -->
+        <div class="tool-panel" id="panel-todo">
+          <div class="tp-header">
+            <span style="font-size:1.3rem">📝</span>
+            <div><div class="tp-title">To-Do List</div><div class="tp-sub">Everything on your plate today</div></div>
+          </div>
+          <div class="tp-body">
+            <div style="max-width:500px">
+              <ul class="todo-list" id="todoList"></ul>
+              <div style="display:flex;gap:0.5rem;margin-top:0.9rem">
+                <input type="text" class="t-input" id="taskInput" placeholder="Add a new task…" style="flex:1" />
+                <button class="t-btn primary" id="addTaskBtn">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRADES -->
+        <div class="tool-panel" id="panel-grades">
+          <div class="tp-header">
+            <span style="font-size:1.3rem">📊</span>
+            <div><div class="tp-title">Grade Tracker</div><div class="tp-sub">Log and track your subject scores</div></div>
+          </div>
+          <div class="tp-body">
+            <div style="max-width:500px">
+              <!-- Average summary block -->
+              <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem;background:var(--bg-inset);border:1px solid var(--rule);border-radius:6px;margin-bottom:1.2rem">
+                <div>
+                  <div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:0.15rem">Average</div>
+                  <div id="gradeAvgNum" style="font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--green);line-height:1">—</div>
+                </div>
+                <div id="gradeAvgMeta" style="font-size:0.74rem;color:var(--ink-muted);font-style:italic">No grades yet</div>
+              </div>
+              <div class="grade-rows" id="gradeList"></div>
+              <div style="display:flex;gap:0.5rem;margin-top:0.9rem;flex-wrap:wrap">
+                <input type="text"   class="t-input" id="subjectInput" placeholder="Subject"  style="flex:2;min-width:110px" />
+                <input type="number" class="t-input" id="gradeInput"   placeholder="Grade %"  style="flex:1;min-width:70px;max-width:100px" min="0" max="100" />
+                <button class="t-btn primary" id="addGradeBtn">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CALENDAR -->
+        <div class="tool-panel" id="panel-calendar">
+          <div class="tp-header">
+            <span style="font-size:1.3rem">📅</span>
+            <div><div class="tp-title">Calendar</div><div class="tp-sub">Stay oriented through the month</div></div>
+          </div>
+          <div class="tp-body">
+            <div style="max-width:320px">
+              <div class="cal-month" id="calMonth"></div>
+              <div class="cal-grid" id="calWd"  style="margin-bottom:3px"></div>
+              <div class="cal-grid" id="calDays"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REVISION PUBLISHER -->
+        <!-- ═══════════════════════════════════════════════════
+             REVISION PANEL
+             Notes are tagged to a subject when uploaded.
+             All notes live in revisionNotes[] array (JS).
+             Each note: { id, name, type, data, subject, category, date }
+             ─────────────────────────────────────────────────────────
+             Notes auto-appear in the matching subject panel.
+             Categories are user-defined (e.g. "Flashcards", "Essays").
+        ═══════════════════════════════════════════════════ -->
+        <div class="tool-panel" id="panel-revision">
+          <div class="tp-header">
+            <span style="font-size:1.3rem">📘</span>
+            <div>
+              <div class="tp-title">Revision Notes</div>
+              <div class="tp-sub">Upload and organise notes by subject</div>
+            </div>
+          </div>
+          <div class="tp-body" style="display:flex;flex-direction:column;gap:1.2rem">
+
+            <!-- Upload row -->
+            <div style="display:flex;gap:0.8rem;flex-wrap:wrap;align-items:flex-end">
+
+              <!-- Subject picker for this upload -->
+              <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:140px">
+                <label style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted)">Subject</label>
+                <select id="revSubjectPicker" class="t-input"
+                        style="height:34px;font-size:0.82rem;padding:0.3rem 0.5rem">
+                  <option value="">— None / General —</option>
+                  <!-- Populated by renderRevSubjectPicker() -->
+                </select>
+              </div>
+
+              <!-- Category input (free text, e.g. "Flashcards") -->
+              <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:130px">
+                <label style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted)">Category</label>
+                <input type="text" id="revCategoryInput" class="t-input"
+                       placeholder="e.g. Flashcards, Essays…"
+                       style="height:34px;font-size:0.82rem;padding:0.3rem 0.6rem" />
+              </div>
+
+              <!-- Note title (optional) -->
+              <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:130px">
+                <label style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted)">Note title</label>
+                <input type="text" id="revTitleInput" class="t-input"
+                       placeholder="Optional title…"
+                       style="height:34px;font-size:0.82rem;padding:0.3rem 0.6rem" />
+              </div>
+
+            </div>
+
+            <!-- Upload zone -->
+            <div class="img-upload-zone" id="revUploadZone"
+                 onclick="document.getElementById('noteUpload').click()"
+                 onmouseenter="this.style.borderColor='var(--accent)'"
+                 onmouseleave="this.style.borderColor=''">
+              <div class="upload-icon">📸</div>
+              <div>Click to upload note images or PDFs</div>
+              <div style="font-size:0.66rem;color:var(--ink-muted);margin-top:0.2rem">
+                Images, PDFs accepted · tagged to selected subject &amp; category
+              </div>
+              <input type="file" id="noteUpload" multiple accept="image/*,.pdf" hidden />
+            </div>
+
+            <!-- All notes list with filter bar -->
+            <div>
+              <!-- Filter row -->
+              <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.7rem;flex-wrap:wrap">
+                <div style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-right:0.3rem">Filter:</div>
+                <select id="revFilterSubject" class="t-input"
+                        style="height:26px;font-size:0.74rem;padding:0 0.4rem;width:auto">
+                  <option value="">All subjects</option>
+                </select>
+                <select id="revFilterCategory" class="t-input"
+                        style="height:26px;font-size:0.74rem;padding:0 0.4rem;width:auto">
+                  <option value="">All categories</option>
+                </select>
+                <span id="revNoteCount" style="font-size:0.7rem;color:var(--ink-muted);margin-left:auto"></span>
+              </div>
+              <!-- Notes grid -->
+              <div id="revNotesList" style="display:flex;flex-direction:column;gap:0.4rem"></div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             SUBJECT OVERVIEW PANEL
+             Opened when user clicks a subject in the sidebar.
+             Shows aggregated data: pomodoro time, todos,
+             grades, calendar events, revision uploads.
+        ═══════════════════════════════════════════════════ -->
+        <div class="tool-panel" id="panel-subject">
+          <div class="tp-header">
+            <span style="font-size:1.3rem" id="subjectPanelEmoji">📚</span>
+            <div>
+              <div class="tp-title" id="subjectPanelTitle">Subject</div>
+              <div class="tp-sub"  id="subjectPanelSub">All data for this subject</div>
+            </div>
+          </div>
+          <div class="tp-body">
+            <div id="subjectPanelContent" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:800px">
+              <!-- Rendered by renderSubjectPanel() -->
+            </div>
+          </div>
+        </div>
+
+
+    </div><!-- /main-area -->
+
+
+    <!-- ═══════════════════════════════════════════
+         RIGHT DETAIL PANEL
+         Slides open when a folder is selected.
+    ═══════════════════════════════════════════ -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-inner" id="detailInner">
+        <div style="font-size:0.72rem;color:var(--ink-muted);font-style:italic;text-align:center;margin-top:2rem;line-height:1.6">
+          Select a folder<br>to see details
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /explorer -->
+
+
+  <!-- STATUS BAR -->
+  <div class="statusbar">
+    <span><span class="status-dot"></span>Tangent v1.0</span>
+    <span id="statusMsg">5 items</span>
+    <span style="margin-left:auto" id="statusDate"></span>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       CUSTOMISE FOLDER MODAL
+       Opens when: right-click → Customise, or sidebar 🎨,
+       or clicking Customise in the detail panel.
+  ═══════════════════════════════════════════════════ -->
+  <div class="modal-bg" id="customModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div class="modal-title" id="modalTitle">Customise Folder</div>
+
+      <!-- Folder name input -->
+      <span class="m-label">Folder Name</span>
+      <input type="text" class="t-input" id="folderNameInput" placeholder="e.g. Biology Notes" />
+
+      <!-- Emoji picker — populated by JS from EMOJIS array -->
+      <span class="m-label">Icon Emoji</span>
+      <div class="emoji-grid" id="emojiGrid"></div>
+
+      <!-- Per-folder colour swatches + custom hex -->
+      <span class="m-label">Folder Colour</span>
+      <div class="colour-grid" id="colourGrid"></div>
+      <div class="colour-hex-row">
+        <div class="colour-preview-dot" id="hexPreviewDot"></div>
+        <!-- Type any hex colour here for full custom colour -->
+        <input type="text" class="t-input" id="hexInput" placeholder="#539ec4" style="font-size:0.8rem;height:28px;padding:0 0.6rem" />
+      </div>
+
+      <!-- Image upload — image replaces emoji on the folder icon -->
+      <span class="m-label">Custom Image (replaces icon)</span>
+      <div class="img-upload-zone" onclick="document.getElementById('folderImgInput').click()"
+           onmouseenter="this.style.borderColor='var(--accent)'"
+           onmouseleave="this.style.borderColor=''">
+        <div class="upload-icon">🖼️</div>
+        <div>Click to upload a photo or image</div>
+        <input type="file" id="folderImgInput" accept="image/*" hidden />
+      </div>
+      <!-- Thumbnail preview after selecting an image -->
+      <img id="imgThumb" class="img-thumb" alt="preview" />
+      <!-- Button to clear the image and revert to emoji -->
+      <button class="t-btn" id="clearImgBtn" style="margin-top:0.4rem;font-size:0.72rem;display:none">✕ Remove image</button>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:0.5rem;margin-top:1.2rem">
+        <button class="t-btn primary" onclick="applyCustomise()" style="flex:1">Apply</button>
+        <button class="t-btn"         onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       RIGHT-CLICK CONTEXT MENU
+  ═══════════════════════════════════════════════════ -->
+  <div class="ctx-menu" id="ctxMenu">
+    <div class="ctx-item" onclick="ctxOpen()">       📂 Open</div>
+    <div class="ctx-item" onclick="ctxCustomise()">  🎨 Customise Icon</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" onclick="ctxRename()">     ✏️ Rename</div>
+    <div class="ctx-item ctx-danger" onclick="ctxDelete()">🗑️ Delete</div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════
+       CUSTOM THEME EDITOR MODAL
+       openThemeEditor() — opens it
+       closeThemeEditor() — closes it
+       Each row maps to a CSS variable on :root.
+       THEME_VARS array in JS controls what rows appear.
+  ═══════════════════════════════════════════════════ -->
+  <div class="theme-modal-bg" id="themeModal">
+    <div class="theme-modal-box">
+
+      <button class="modal-close" onclick="closeThemeEditor()">✕</button>
+      <div class="modal-title" style="margin-bottom:0.6rem">🖌️ Custom Theme</div>
+
+      <!-- Live preview strip — coloured dots update as you change colours -->
+      <div class="theme-preview-strip" id="themePreviewStrip">
+        <!-- dots rendered by JS -->
+        <span class="theme-preview-label">Live preview</span>
+      </div>
+
+      <!-- Quick-apply preset themes -->
+      <div class="theme-group">Quick Presets</div>
+      <div class="theme-preset-bar" id="themePresetBar">
+        <!-- rendered by JS -->
+      </div>
+
+      <!-- Colour variable rows — rendered by JS from THEME_VARS -->
+      <div id="themeVarRows"></div>
+
+      <!-- Action buttons -->
+      <div class="theme-actions">
+        <button class="t-btn primary" onclick="applyTheme()" style="flex:1">✓ Apply Theme</button>
+        <button class="t-btn" onclick="resetTheme()" style="flex:1">↺ Reset to Default</button>
+        <button class="t-btn" onclick="closeThemeEditor()">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       JAVASCRIPT
+  ═══════════════════════════════════════════════════ -->
+  <script>
+
+    // ═════════════════════════════════════════════
+    // CONFIGURATION
+    // Edit these arrays / objects to change defaults.
+    // ═════════════════════════════════════════════
+
+    /* ── EMOJI OPTIONS in the icon picker ──
+       Add or remove emojis freely.            */
+    const EMOJIS = [
+      '⏱','📝','📊','📅','📘','🧬','📐','⚗️','⚡','📖',
+      '🎯','💡','🔬','🗒️','📌','🏆','✏️','📚','🖊️','🗂️',
+      '🧪','📈','🌍','🗺️','🔭','💻','🎓','📋','🧠','⭐',
+      '🎨','🌸','🦋','🔥','❄️','🎵','🌈','🏅','🔑','📿'
+    ];
+
+    /* ── FOLDER COLOUR PRESETS ──
+       Used in the individual folder colour picker.
+       Each entry is a hex string.                 */
+    const FOLDER_COLOURS = [
+      '#539ec4','#A9DEF9','#2a8bbc','#3aab6e','#e8a030',
+      '#e05050','#9b6fd4','#e067a0','#5bc8ac','#ffe066'
+    ];
+
+    /* ── GLOBAL PALETTE PRESETS ──
+       Shown in the sidebar palette panel.
+       colours[0] = primary accent for site theming.
+       Add a new object to add a new palette.        */
+    const PALETTES = [
+      {
+        name: 'Ocean',
+        colours: ['#539ec4','#A9DEF9','#2a8bbc','#7ec8e8','#4a7fb5']
+      },
+      {
+        name: 'Forest',
+        colours: ['#3aab6e','#a8d8a8','#2d7a4f','#6fcf97','#1b4332']
+      },
+      {
+        name: 'Sunset',
+        colours: ['#e8a030','#ffce6e','#e05050','#ff8c69','#b5451b']
+      },
+      {
+        name: 'Lavender',
+        colours: ['#9b6fd4','#d4b8f0','#7b4fb8','#c77dff','#5a2d82']
+      },
+      {
+        name: 'Casio',           /* the original dark-mode blue palette */
+        colours: ['#3b9eff','#00d0f0','#1a6fd4','#7ec0ff','#0a4fa3']
+      },
+      {
+        name: 'Rose',
+        colours: ['#e067a0','#f7b8d8','#c0396c','#ff9ec4','#8c1a4b']
+      }
+    ];
+
+    /* ── DEFAULT FOLDERS ──
+       panel = the tool panel ID it opens.
+       Set image: null if no custom image.     */
+    let folders = [
+      { id:1, name:'Pomodoro',  emoji:'⏱',  colour:'#539ec4', panel:'pomodoro', image: null },
+      { id:2, name:'To-Do',     emoji:'📝',  colour:'#A9DEF9', panel:'todo',     image: null },
+      { id:3, name:'Grades',    emoji:'📊',  colour:'#3aab6e', panel:'grades',   image: null },
+      { id:4, name:'Calendar',  emoji:'📅',  colour:'#e8a030', panel:'calendar', image: null },
+      { id:5, name:'Revision',  emoji:'📘',  colour:'#9b6fd4', panel:'revision', image: null },
+    ];
+
+    let nextId = 6;
+
+
+    // ═════════════════════════════════════════════
+    // STATE
+    // ═════════════════════════════════════════════
+    let selectedId    = null;   // currently selected folder id
+    let ctxTargetId   = null;   // folder id under the right-click menu
+    let pickerId      = null;   // folder id being edited in modal (null = new)
+    let pickerEmoji   = '📁';
+    let pickerColour  = FOLDER_COLOURS[0];
+    let pickerImage   = null;   // base64 data URL or null
+    let viewMode      = 'grid'; // 'grid' | 'list'
+    let activePalette = null;   // index into PALETTES, or null
+    let applyToSite   = false;  // whether palette also sets UI accent
+
+
+    // ═════════════════════════════════════════════
+    // FOLDER SVG GENERATOR
+    // The folder shape is inline SVG so the colour
+    // is fully dynamic. Edit the path data here to
+    // change the folder silhouette.
+    // ═════════════════════════════════════════════
+    function folderSVG(colour) {
+      /* Folder body with tab at top-left */
+      return `<svg class="folder-svg" viewBox="0 0 100 82" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Back face (tab) -->
+        <path d="M3 16C3 12.7 5.7 10 9 10H37L46 22H91C94.3 22 97 24.7 97 28V72C97 75.3 94.3 78 91 78H9C5.7 78 3 75.3 3 72V16Z"
+              fill="${colour}" opacity="0.20"/>
+        <!-- Front face (body) -->
+        <path d="M3 28C3 24.7 5.7 22 9 22H91C94.3 22 97 24.7 97 28V72C97 75.3 94.3 78 91 78H9C5.7 78 3 75.3 3 72V28Z"
+              fill="${colour}" opacity="0.35"/>
+        <!-- Body outline -->
+        <path d="M3 28C3 24.7 5.7 22 9 22H91C94.3 22 97 24.7 97 28V72C97 75.3 94.3 78 91 78H9C5.7 78 3 75.3 3 72V28Z"
+              stroke="${colour}" stroke-width="2" fill="none"/>
+        <!-- Tab outline -->
+        <path d="M3 16C3 12.7 5.7 10 9 10H37L46 22H3V16Z"
+              stroke="${colour}" stroke-width="2" fill="${colour}" opacity="0.45"/>
+      </svg>`;
+    }
+
+
+    // ═════════════════════════════════════════════════════════
+    // RENDER FOLDERS (Quick Access section)
+    // Only renders the tool folders (not subjects).
+    // Subjects get their own renderSubjectFolders() below.
+    // ═════════════════════════════════════════════════════════
+    function renderFolders() {
+      const grid  = document.getElementById('folderGrid');
+      const query = document.getElementById('searchInput').value.toLowerCase();
+      const shown = folders.filter(f => f.name.toLowerCase().includes(query));
+
+      grid.className = viewMode === 'list' ? 'folder-grid list-view' : 'folder-grid';
+      grid.innerHTML = '';
+
+      shown.forEach(f => buildFolderEl(f, grid, false));
+
+      // Update count badge
+      const el = document.getElementById('qaCount');
+      if (el) el.textContent = shown.length;
+
+      const total = shown.length + pomSubjects.length;
+      document.getElementById('viewLabel').textContent = `${total} item${total !== 1 ? 's' : ''}`;
+      document.getElementById('statusMsg').textContent = `${total} item${total !== 1 ? 's' : ''}`;
+
+      // Also refresh subject folders so both sections stay in sync
+      renderSubjectFolders();
+    }
+
+    // ═════════════════════════════════════════════════════════
+    // RENDER SUBJECT FOLDERS (Subjects section on dashboard)
+    // One folder per entry in pomSubjects[].
+    // Double-clicking opens the subject's overview panel.
+    // Colour and emoji are taken from the subject's folder
+    // customisation (stored in subjFolderMeta map).
+    // ═════════════════════════════════════════════════════════
+
+    // Per-subject folder customisation — keyed by subject id.
+    // Stores { colour, emoji, image } overrides set via right-click.
+    // Default colour cycles through SUBJ_FOLDER_COLOURS.
+    const subjFolderMeta = {};
+
+    // Default colours for subject folders (cycles)
+    const SUBJ_FOLDER_COLOURS = [
+      '#539ec4','#3aab6e','#e8a030','#9b6fd4','#e067a0',
+      '#5bc8ac','#e05050','#A9DEF9','#ffe066','#2a8bbc'
+    ];
+
+    function getSubjMeta(s) {
+      if (!subjFolderMeta[s.id]) {
+        const i = pomSubjects.indexOf(s);
+        subjFolderMeta[s.id] = {
+          colour: SUBJ_FOLDER_COLOURS[i % SUBJ_FOLDER_COLOURS.length],
+          emoji:  SUBJ_EMOJIS[i % SUBJ_EMOJIS.length],
+          image:  null
+        };
+      }
+      return subjFolderMeta[s.id];
+    }
+
+    function renderSubjectFolders() {
+      const grid  = document.getElementById('subjectFolderGrid');
+      const empty = document.getElementById('subjectFolderEmpty');
+      const query = (document.getElementById('searchInput').value || '').toLowerCase();
+      if (!grid) return;
+
+      const shown = pomSubjects.filter(s => s.name.toLowerCase().includes(query));
+      grid.className = viewMode === 'list' ? 'folder-grid list-view' : 'folder-grid';
+      grid.innerHTML = '';
+
+      if (shown.length === 0) {
+        empty.style.display = '';
+      } else {
+        empty.style.display = 'none';
+        shown.forEach(s => {
+          const meta = getSubjMeta(s);
+          // Build a fake folder-like object for buildFolderEl
+          const fakeFolder = {
+            id:     'subj_' + s.id,
+            name:   s.name,
+            emoji:  meta.emoji,
+            colour: meta.colour,
+            image:  meta.image,
+            _subjId: s.id        // marker so we know it's a subject folder
+          };
+          buildFolderEl(fakeFolder, grid, true);
+        });
+      }
+
+      const el = document.getElementById('subjCount');
+      if (el) el.textContent = pomSubjects.length;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // buildFolderEl — shared factory for tool and subject folders
+    // isSubject=true → double-click opens subject panel
+    // isSubject=false → double-click opens tool panel
+    // ─────────────────────────────────────────────────────────
+    function buildFolderEl(f, grid, isSubject) {
+      const div = document.createElement('div');
+      div.className = 'folder-item'
+        + (selectedId === f.id ? ' selected' : '')
+        + (f.image ? ' has-image' : '');
+      div.dataset.id = f.id;
+
+      div.innerHTML = `
+        <div class="folder-icon-wrap">
+          ${folderSVG(f.colour)}
+          <img class="folder-img-cover" src="${f.image || ''}" alt="" />
+          <div class="folder-emoji">${f.emoji}</div>
+        </div>
+        <div class="folder-name">${f.name}</div>
+      `;
+
+      div.addEventListener('click', e => { e.stopPropagation(); selectFolder(f.id); });
+
+      div.addEventListener('dblclick', e => {
+        e.stopPropagation();
+        if (isSubject) openSubjectPanel(f._subjId);
+        else openFolder(f.id);
+      });
+
+      div.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        if (isSubject) showSubjCtx(e, f._subjId);
+        else showCtx(e, f.id);
+      });
+
+      let lastTap = 0;
+      div.addEventListener('touchend', e => {
+        const now = Date.now();
+        if (now - lastTap < 350) {
+          e.preventDefault();
+          if (isSubject) openSubjectPanel(f._subjId);
+          else openFolder(f.id);
+        } else selectFolder(f.id);
+        lastTap = now;
+      });
+
+      grid.appendChild(div);
+    }
+
+    // ── Subject folder right-click context menu ──
+    let ctxSubjTarget = null;
+
+    function showSubjCtx(e, subjId) {
+      ctxSubjTarget = subjId;
+      const subj = pomSubjects.find(s => s.id === subjId);
+      if (!subj) return;
+      selectedId = 'subj_' + subjId;
+      renderSubjectFolders();
+      ctxMenu.innerHTML = `
+        <div class="ctx-item" onclick="openSubjectPanel(${subjId})">📂 Open</div>
+        <div class="ctx-item" onclick="openSubjFolderCustomise(${subjId})">🎨 Customise Folder</div>
+        <div class="ctx-sep"></div>
+        <div class="ctx-item" onclick="ctxRenameSubj(${subjId})">✏️ Rename</div>
+        <div class="ctx-item ctx-danger" onclick="ctxDeleteSubj(${subjId})">🗑️ Delete Subject</div>
+      `;
+      ctxMenu.style.left = e.clientX + 'px';
+      ctxMenu.style.top  = e.clientY + 'px';
+      ctxMenu.classList.add('open');
+    }
+
+    function ctxRenameSubj(id) {
+      hideCtx();
+      const s = pomSubjects.find(x => x.id === id);
+      if (!s) return;
+      const n = prompt('Rename subject:', s.name);
+      if (n && n.trim()) { s.name = n.trim(); renderSbSubjects(); renderSubjectFolders(); }
+    }
+
+    function ctxDeleteSubj(id) {
+      hideCtx();
+      const s = pomSubjects.find(x => x.id === id);
+      if (!s || !confirm(`Delete "${s.name}" and all its data?`)) return;
+      pomSubjects = pomSubjects.filter(x => x.id !== id);
+      delete subjFolderMeta[id];
+      if (currentSubjectId === id) { currentSubjectId = null; showHome(); }
+      if (pomActiveId === id) { pomActiveId = null; updatePomBadge(); renderPomTabs(); }
+      renderSbSubjects(); renderSubjectFolders(); renderPomStats();
+      renderRevSubjectPicker();
+    }
+
+    // Customise subject folder (colour / emoji / image)
+    function openSubjFolderCustomise(id) {
+      hideCtx();
+      const meta = getSubjMeta(pomSubjects.find(s => s.id === id));
+      pickerId      = 'subj_' + id; // special marker
+      pickerEmoji   = meta.emoji;
+      pickerColour  = meta.colour;
+      pickerImage   = meta.image;
+      const subj = pomSubjects.find(s => s.id === id);
+      document.getElementById('modalTitle').textContent     = `Customise "${subj?.name}" Folder`;
+      document.getElementById('folderNameInput').value      = subj?.name || '';
+      document.getElementById('hexInput').value             = meta.colour;
+      document.getElementById('hexPreviewDot').style.background = meta.colour;
+      // Render emoji + colour grids (reuse existing modal logic)
+      openCustomise('subj_' + id);
+    }
+
+
+    // ═════════════════════════════════════════════
+    // NAVIGATION — home / open folder / sidebar
+    // ═════════════════════════════════════════════
+    function showHome() {
+      document.getElementById('homeView').style.display  = '';
+      document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('visible'));
+      document.getElementById('addressText').textContent = 'Tangent / Dashboard';
+      document.getElementById('pathLabel').textContent   = 'Dashboard';
+      // Show content-scroll + view-bar again
+      document.querySelector('.main-area').classList.remove('panel-active');
+      setActiveSb('home');
+      renderFolders();          // renders Quick Access + calls renderSubjectFolders
+    }
+
+    function openFolder(id) {
+      const f = folders.find(x => x.id === id);
+      if (!f) return;
+
+      document.getElementById('homeView').style.display = 'none';
+      document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('visible'));
+      // Hide content-scroll, show panel area
+      document.querySelector('.main-area').classList.add('panel-active');
+
+      const panel = document.getElementById('panel-' + f.panel);
+      if (panel) panel.classList.add('visible');
+
+      document.getElementById('addressText').textContent = `Tangent / Dashboard / ${f.name}`;
+      document.getElementById('pathLabel').textContent   = f.name;
+      setActiveSb(f.panel);
+      showDetail(f);
+    }
+
+    function selectFolder(id) {
+      selectedId = id;
+      renderFolders();
+      showDetail(folders.find(x => x.id === id));
+    }
+
+    function sideNav(el, panelId) {
+      document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+      if (panelId === 'home') { showHome(); return; }
+      const f = folders.find(x => x.panel === panelId);
+      if (f) openFolder(f.id);
+    }
+
+    function setActiveSb(panelId) {
+      document.querySelectorAll('.sb-item[data-nav]').forEach(i => {
+        i.classList.toggle('active', i.dataset.nav === panelId);
+      });
+    }
+
+
+    // ═════════════════════════════════════════════
+    // DETAIL PANEL
+    // ═════════════════════════════════════════════
+    function toggleDetail() {
+      document.getElementById('detailPanel').classList.toggle('open');
+    }
+
+    function showDetail(f) {
+      if (!f) return;
+      const panel = document.getElementById('detailPanel');
+      panel.classList.add('open');
+      document.getElementById('detailInner').innerHTML = `
+        <div style="text-align:center;margin-bottom:1rem">
+          <!-- Show image thumbnail or emoji in detail panel -->
+          ${f.image
+            ? `<img src="${f.image}" style="width:70px;height:56px;object-fit:cover;border-radius:5px;border:1px solid var(--rule);margin-bottom:0.5rem" />`
+            : `<div style="font-size:2.8rem;margin-bottom:0.4rem">${f.emoji}</div>`
+          }
+          <div class="detail-title">${f.name}</div>
+          <div class="detail-meta">Study tool · Double-click to open</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.45rem">
+          <button class="t-btn primary" onclick="openFolder(${f.id})" style="width:100%">📂 Open</button>
+          <button class="t-btn" onclick="openCustomise(${f.id})" style="width:100%">🎨 Customise</button>
+        </div>
+        <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--rule)">
+          <div style="font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-bottom:0.4rem">Info</div>
+          <div style="font-size:0.73rem;color:var(--ink-muted);line-height:1.7">
+            <div>Icon: ${f.emoji}</div>
+            <div>Colour: <span style="color:${f.colour}">■</span> ${f.colour}</div>
+            <div>Type: Tool Folder</div>
+          </div>
+        </div>
+      `;
+    }
+
+
+    // ═════════════════════════════════════════════
+    // VIEW TOGGLE (grid / list)
+    // ═════════════════════════════════════════════
+    function setView(mode) {
+      viewMode = mode;
+      document.getElementById('vGrid').classList.toggle('active', mode === 'grid');
+      document.getElementById('vList').classList.toggle('active', mode === 'list');
+      renderFolders();
+    }
+
+
+    // ═════════════════════════════════════════════
+    // CONTEXT MENU
+    // ═════════════════════════════════════════════
+    const ctxMenu = document.getElementById('ctxMenu');
+
+    function showCtx(e, id) {
+      ctxTargetId = id;
+      selectedId  = id;
+      renderFolders();
+      /* Position menu at mouse, flip if near edge */
+      let x = e.clientX, y = e.clientY;
+      ctxMenu.style.left = x + 'px';
+      ctxMenu.style.top  = y + 'px';
+      ctxMenu.classList.add('open');
+    }
+
+    function hideCtx() { ctxMenu.classList.remove('open'); }
+    document.addEventListener('click', hideCtx);
+
+    function ctxOpen()      { hideCtx(); openFolder(ctxTargetId); }
+    function ctxCustomise() { hideCtx(); openCustomise(ctxTargetId); }
+    function ctxRename() {
+      hideCtx();
+      const f = folders.find(x => x.id === ctxTargetId);
+      if (!f) return;
+      const n = prompt('Rename folder:', f.name);
+      if (n && n.trim()) { f.name = n.trim(); renderFolders(); }
+    }
+    function ctxDelete() {
+      hideCtx();
+      const f = folders.find(x => x.id === ctxTargetId);
+      if (!f) return;
+      if (!confirm(`Delete "${f.name}"?`)) return;
+      folders = folders.filter(x => x.id !== ctxTargetId);
+      if (document.getElementById('panel-' + f.panel)?.classList.contains('visible')) showHome();
+      selectedId = null;
+      renderFolders();
+    }
+
+    /* Deselect on empty area click */
+    document.getElementById('contentScroll').addEventListener('click', e => {
+      if (['contentScroll','homeView','folderGrid'].includes(e.target.id)) {
+        selectedId = null; renderFolders();
+      }
+    });
+
+
+    // ═════════════════════════════════════════════
+    // CUSTOMISE FOLDER MODAL
+    // ═════════════════════════════════════════════
+    function openCustomise(id) {
+      pickerId     = id;
+      const f      = id ? folders.find(x => x.id === id) : null;
+      pickerEmoji  = f ? f.emoji  : '📁';
+      pickerColour = f ? f.colour : FOLDER_COLOURS[0];
+      pickerImage  = f ? f.image  : null;
+
+      document.getElementById('modalTitle').textContent     = f ? `Customise "${f.name}"` : 'New Folder';
+      document.getElementById('folderNameInput').value      = f ? f.name : '';
+      document.getElementById('hexInput').value             = f ? f.colour : FOLDER_COLOURS[0];
+      document.getElementById('hexPreviewDot').style.background = pickerColour;
+
+      /* Render emoji grid */
+      const eg = document.getElementById('emojiGrid');
+      eg.innerHTML = '';
+      EMOJIS.forEach(em => {
+        const btn = document.createElement('div');
+        btn.className  = 'emoji-opt' + (em === pickerEmoji ? ' sel' : '');
+        btn.textContent = em;
+        btn.addEventListener('click', () => {
+          pickerEmoji = em;
+          eg.querySelectorAll('.emoji-opt').forEach(b => b.classList.toggle('sel', b.textContent === em));
+        });
+        eg.appendChild(btn);
+      });
+
+      /* Render colour swatches */
+      const cg = document.getElementById('colourGrid');
+      cg.innerHTML = '';
+      FOLDER_COLOURS.forEach(c => {
+        const sw = document.createElement('div');
+        sw.className  = 'colour-sw' + (c === pickerColour ? ' sel' : '');
+        sw.style.background = c;
+        sw.addEventListener('click', () => {
+          pickerColour = c;
+          cg.querySelectorAll('.colour-sw').forEach(s => s.classList.toggle('sel', s.style.background === sw.style.background));
+          document.getElementById('hexInput').value = c;
+          document.getElementById('hexPreviewDot').style.background = c;
+        });
+        cg.appendChild(sw);
+      });
+
+      /* Show existing image thumbnail if present */
+      const thumb     = document.getElementById('imgThumb');
+      const clearBtn  = document.getElementById('clearImgBtn');
+      if (pickerImage) {
+        thumb.src = pickerImage;
+        thumb.classList.add('visible');
+        clearBtn.style.display = '';
+      } else {
+        thumb.classList.remove('visible');
+        clearBtn.style.display = 'none';
+      }
+
+      document.getElementById('customModal').classList.add('open');
+    }
+
+    /* Live hex input → preview dot + swatch selection */
+    document.getElementById('hexInput').addEventListener('input', e => {
+      const val = e.target.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        pickerColour = val;
+        document.getElementById('hexPreviewDot').style.background = val;
+        /* Deselect preset swatches */
+        document.querySelectorAll('#colourGrid .colour-sw').forEach(s => s.classList.remove('sel'));
+      }
+    });
+
+    /* Image upload handling */
+    document.getElementById('folderImgInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        pickerImage = ev.target.result;
+        const thumb = document.getElementById('imgThumb');
+        thumb.src = pickerImage;
+        thumb.classList.add('visible');
+        document.getElementById('clearImgBtn').style.display = '';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    /* Clear image button */
+    document.getElementById('clearImgBtn').addEventListener('click', () => {
+      pickerImage = null;
+      const thumb = document.getElementById('imgThumb');
+      thumb.classList.remove('visible');
+      document.getElementById('clearImgBtn').style.display = 'none';
+      document.getElementById('folderImgInput').value = '';
+    });
+
+    function applyCustomise() {
+      const name = document.getElementById('folderNameInput').value.trim() || 'New Folder';
+
+      if (typeof pickerId === 'string' && pickerId.startsWith('subj_')) {
+        // Subject folder customisation
+        const subjId = parseInt(pickerId.replace('subj_', ''));
+        const meta   = getSubjMeta(pomSubjects.find(s => s.id === subjId));
+        meta.emoji   = pickerEmoji;
+        meta.colour  = pickerColour;
+        meta.image   = pickerImage;
+        // Also rename subject
+        const subj = pomSubjects.find(s => s.id === subjId);
+        if (subj && name) subj.name = name;
+        renderSubjectFolders();
+        renderSbSubjects();
+      } else if (pickerId) {
+        // Tool folder edit
+        const f = folders.find(x => x.id === pickerId);
+        if (f) { f.name = name; f.emoji = pickerEmoji; f.colour = pickerColour; f.image = pickerImage; }
+        renderFolders();
+      } else {
+        // New custom folder
+        folders.push({ id: nextId++, name, emoji: pickerEmoji, colour: pickerColour, panel: 'home', image: pickerImage });
+        renderFolders();
+      }
+      closeModal();
+    }
+
+    function closeModal() {
+      document.getElementById('customModal').classList.remove('open');
+      document.getElementById('folderImgInput').value = '';
+    }
+
+
+    // ═════════════════════════════════════════════
+    // GLOBAL PALETTE SYSTEM
+    // Renders preset strips in the sidebar.
+    // When applied, recolours ALL folder colours
+    // using the palette's colour array (cycling if
+    // there are more folders than colours).
+    // If applyToSite is true, also updates CSS
+    // accent variables on the root.
+    // ═════════════════════════════════════════════
+    function renderPalettePresets() {
+      const container = document.getElementById('palettePresets');
+      container.innerHTML = '';
+      PALETTES.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'palette-preset' + (activePalette === i ? ' active' : '');
+
+        /* Coloured dots strip */
+        const dots = document.createElement('div');
+        dots.className = 'palette-dots';
+        p.colours.forEach(c => {
+          const d = document.createElement('div');
+          d.className = 'palette-dot';
+          d.style.background = c;
+          dots.appendChild(d);
+        });
+
+        /* Palette name */
+        const label = document.createElement('span');
+        label.className = 'palette-preset-name';
+        label.textContent = p.name;
+
+        row.appendChild(dots);
+        row.appendChild(label);
+
+        /* Click to apply this palette */
+        row.addEventListener('click', () => applyPalette(i));
+
+        container.appendChild(row);
+      });
+    }
+
+    function applyPalette(idx) {
+      activePalette = idx;
+      const p = PALETTES[idx];
+
+      /* Recolour each folder, cycling through palette colours */
+      folders.forEach((f, i) => {
+        f.colour = p.colours[i % p.colours.length];
+      });
+
+      /* Optionally apply the palette's first colour as the site accent */
+      if (applyToSite) applySiteAccent(p.colours[0], p.colours[1] || p.colours[0]);
+
+      renderFolders();
+      renderPalettePresets();
+
+      /* If detail panel is open refresh it */
+      if (selectedId) showDetail(folders.find(x => x.id === selectedId));
+    }
+
+    /* Updates CSS variables on :root to shift the whole site accent colour.
+       primary = --accent, dark = --accent-dark               */
+    function applySiteAccent(primary, dark) {
+      const root = document.documentElement;
+      root.style.setProperty('--accent',      primary);
+      root.style.setProperty('--accent-dark', dark);
+      root.style.setProperty('--secondary',   dark);
+    }
+
+    /* Reset accent to theme defaults */
+    function resetSiteAccent() {
+      const root  = document.documentElement;
+      const dark  = document.documentElement.getAttribute('data-theme') === 'dark';
+      root.style.setProperty('--accent',      dark ? '#3b9eff' : '#539ec4');
+      root.style.setProperty('--accent-dark', dark ? '#1a6fd4' : '#2a8bbc');
+      root.style.setProperty('--secondary',   dark ? '#1a6fd4' : '#2a8bbc');
+    }
+
+    /* "Apply accent to site" toggle */
+    document.getElementById('siteThemeToggle').addEventListener('change', e => {
+      applyToSite = e.target.checked;
+      if (applyToSite && activePalette !== null) {
+        const p = PALETTES[activePalette];
+        applySiteAccent(p.colours[0], p.colours[1] || p.colours[0]);
+      } else {
+        resetSiteAccent();
+      }
+    });
+
+    /* Init palette UI */
+    renderPalettePresets();
+
+
+    // ═════════════════════════════════════════════
+    // DARK / LIGHT THEME TOGGLE
+    // Persisted to localStorage as 'tangent-theme'
+    // ═════════════════════════════════════════════
+    (function initTheme() {
+      const saved = localStorage.getItem('tangent-theme') || 'light';
+      if (saved === 'dark') {
+        document.documentElement.setAttribute('data-theme','dark');
+        document.getElementById('themeToggle').textContent = '☀️';
+      }
+    })();
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        document.documentElement.removeAttribute('data-theme');
+        document.getElementById('themeToggle').textContent = '🌙';
+        localStorage.setItem('tangent-theme','light');
+      } else {
+        document.documentElement.setAttribute('data-theme','dark');
+        document.getElementById('themeToggle').textContent = '☀️';
+        localStorage.setItem('tangent-theme','dark');
+      }
+      /* Re-apply site accent if locked */
+      if (applyToSite && activePalette !== null) {
+        const p = PALETTES[activePalette];
+        applySiteAccent(p.colours[0], p.colours[1] || p.colours[0]);
+      } else {
+        resetSiteAccent();
+      }
+    });
+
+
+    // ═════════════════════════════════════════════
+    // CLOCK (title bar)
+    // ═════════════════════════════════════════════
+    let is24h = false;
+
+    const MONTHS   = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+    function updateClock() {
+      const n = new Date();
+      let h   = n.getHours();
+      const m = String(n.getMinutes()).padStart(2,'0');
+      const s = String(n.getSeconds()).padStart(2,'0');
+      if (is24h) {
+        document.getElementById('clock').textContent = `${String(h).padStart(2,'0')}:${m}:${s}`;
+      } else {
+        const ap = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        document.getElementById('clock').textContent = `${h}:${m}:${s} ${ap}`;
+      }
+    }
+
+    document.getElementById('fmtToggle').addEventListener('click', () => {
+      is24h = !is24h;
+      document.getElementById('fmtToggle').textContent = is24h ? '12H' : '24H';
+      updateClock();
+    });
+
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* Date label in status bar */
+    const today = new Date();
+    document.getElementById('statusDate').textContent =
+      `${WEEKDAYS[today.getDay()]}, ${today.getDate()} ${MONTHS[today.getMonth()]} ${today.getFullYear()}`;
+
+
+    // ═════════════════════════════════════════════════════════
+    // POMODORO — full subject-tracking system
+    // ─────────────────────────────────────────────────────────
+    // DATA SHAPE
+    // pomSubjects = [
+    //   {
+    //     id:       number,          unique id
+    //     name:     string,          subject name e.g. "Biology"
+    //     totalSec: number,          cumulative seconds studied
+    //     sessions: [               list of completed sessions
+    //       { note: string, dur: number (seconds), date: string }
+    //     ],
+    //     todos: [                  linked to-do tasks for this subject
+    //       { text: string, done: boolean }
+    //     ]
+    //   }
+    // ]
+    //
+    // CIRCUM = 2 × π × r  (r = 80 from SVG)
+    // If you change r in the SVG, update CIRCUM here.
+    // ═════════════════════════════════════════════════════════
+
+    const CIRCUM = 2 * Math.PI * 80; // ≈ 502.65
+
+    // ── State ──
+    let pomSubjects    = [];          // all subjects
+    let pomActiveId    = null;        // currently selected subject id
+    let pomNextSubjId  = 1;
+    let pomTime        = 25 * 60;     // current timer value in seconds
+    let pomFull        = 25 * 60;     // full duration for the current session
+    let pomTimer       = null;
+    let pomRunning     = false;
+    let pomElapsed     = 0;           // seconds elapsed in current session
+    let pomLiveOffset  = 0;           // live in-progress seconds (cleared on session end/reset)
+
+    // ── Helpers ──
+    function pomFmt(t) {
+      const m = Math.floor(t / 60), s = t % 60;
+      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    function durFmt(sec) {
+      // Format seconds as "Xh Ym Zs" — used in session log
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (h > 0) return `${h}h ${m}m`;
+      if (m > 0) return `${m}m ${s}s`;
+      return `${s}s`;
+    }
+
+    function todayStr() {
+      const d = new Date();
+      return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    }
+
+    // ── Grand totals across all subjects ──
+    // Includes pomLiveOffset so the bar counts up live while a session is running.
+    // pomLiveOffset is the seconds elapsed in the CURRENT session (not yet committed).
+    function pomGrandTotal() {
+      const committed = pomSubjects.reduce((sum, s) => sum + s.totalSec, 0);
+      return committed + pomLiveOffset;
+    }
+
+    // ── Update the Yeolputa stats bar ──
+    function renderPomStats() {
+      const total = pomGrandTotal();
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      document.getElementById('statHours').textContent = String(h).padStart(2,'0');
+      document.getElementById('statMins').textContent  = String(m).padStart(2,'0');
+      document.getElementById('statSecs').textContent  = String(s).padStart(2,'0');
+    }
+
+    // ── Render subject tab pills ──
+    function renderPomTabs() {
+      const bar     = document.getElementById('pomSubjectBar');
+      const addBtn  = document.getElementById('pomAddSubjectBtn');
+      // Remove all existing tabs (keep addBtn)
+      bar.querySelectorAll('.pom-subject-tab').forEach(t => t.remove());
+
+      pomSubjects.forEach(s => {
+        const tab = document.createElement('button');
+        tab.className   = 'pom-subject-tab' + (pomActiveId === s.id ? ' active' : '');
+        tab.textContent = s.name;
+        tab.addEventListener('click', () => {
+          pomActiveId = s.id;
+          renderPomTabs();
+          renderPomDetail();
+          updatePomBadge();
+          if (typeof renderSbSubjects === 'function') renderSbSubjects();
+        });
+        bar.insertBefore(tab, addBtn);
+      });
+    }
+
+    // ── Update the "Studying: X" badge under the ring ──
+    function updatePomBadge() {
+      const el   = document.getElementById('pomActiveSubjectBadge');
+      const subj = pomSubjects.find(s => s.id === pomActiveId);
+      el.textContent = subj ? `Studying: ${subj.name}` : '';
+    }
+
+    // ── Render the right-hand detail pane for the active subject ──
+    function renderPomDetail() {
+      const col    = document.getElementById('pomDetailCol');
+      const noSubj = document.getElementById('pomNoSubject');
+      const subj   = pomSubjects.find(s => s.id === pomActiveId);
+
+      if (!subj) {
+        noSubj.style.display = '';
+        col.querySelectorAll('.pom-subject-content').forEach(e => e.remove());
+        return;
+      }
+      noSubj.style.display = 'none';
+
+      // Remove old content (re-render fresh)
+      col.querySelectorAll('.pom-subject-content').forEach(e => e.remove());
+
+      const wrap = document.createElement('div');
+      wrap.className = 'pom-subject-content';
+      wrap.style.display = 'flex';
+      wrap.style.flexDirection = 'column';
+      wrap.style.gap = '0.8rem';
+
+      // ── Header: name + total time ──
+      const header = document.createElement('div');
+      header.className = 'pom-subject-header';
+      header.innerHTML = `
+        <div class="pom-subject-name">${subj.name}</div>
+        <div class="pom-subject-total">${durFmt(subj.totalSec)} total</div>
+      `;
+      wrap.appendChild(header);
+
+      // ── Linked to-do tasks ──
+      const todoSection = document.createElement('div');
+      todoSection.innerHTML = `<div class="pom-detail-section">Linked Tasks</div>`;
+
+      if (subj.todos.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'font-size:0.74rem;color:var(--ink-muted);font-style:italic;padding:0.2rem 0';
+        empty.textContent = 'No tasks linked yet';
+        todoSection.appendChild(empty);
+      } else {
+        const todoList = document.createElement('div');
+        todoList.className = 'pom-linked-todos';
+        subj.todos.forEach((t, ti) => {
+          const row = document.createElement('div');
+          row.className = 'pom-linked-todo' + (t.done ? ' done' : '');
+          const chk = document.createElement('div');
+          chk.className = 'pom-linked-chk';
+          chk.addEventListener('click', () => {
+            subj.todos[ti].done = !subj.todos[ti].done;
+            renderPomDetail();
+          });
+          const label = document.createElement('span');
+          label.style.flex = '1';
+          label.textContent = t.text;
+          const del = document.createElement('button');
+          del.style.cssText = 'background:none;border:none;font-size:0.7rem;color:var(--ink-muted)';
+          del.textContent = '✕';
+          del.addEventListener('click', () => { subj.todos.splice(ti, 1); renderPomDetail(); });
+          row.appendChild(chk); row.appendChild(label); row.appendChild(del);
+          todoList.appendChild(row);
+        });
+        todoSection.appendChild(todoList);
+      }
+
+      // Add task to this subject input
+      const addTodoRow = document.createElement('div');
+      addTodoRow.style.cssText = 'display:flex;gap:0.35rem;margin-top:0.35rem';
+      addTodoRow.innerHTML = `
+        <input type="text" class="t-input" placeholder="Add task for ${subj.name}…"
+               id="pomTodoInput_${subj.id}"
+               style="flex:1;height:26px;font-size:0.74rem;padding:0.25rem 0.5rem" />
+        <button class="t-btn primary" id="pomTodoAdd_${subj.id}"
+                style="height:26px;font-size:0.7rem;padding:0 0.55rem">+</button>
+      `;
+      todoSection.appendChild(addTodoRow);
+      wrap.appendChild(todoSection);
+
+      // Wire add-task button
+      setTimeout(() => {
+        const inp = document.getElementById(`pomTodoInput_${subj.id}`);
+        const btn = document.getElementById(`pomTodoAdd_${subj.id}`);
+        if (btn && inp) {
+          const addFn = () => {
+            const v = inp.value.trim();
+            if (v) { subj.todos.push({ text: v, done: false }); inp.value = ''; renderPomDetail(); }
+          };
+          btn.addEventListener('click', addFn);
+          inp.addEventListener('keypress', e => { if (e.key === 'Enter') addFn(); });
+        }
+      }, 0);
+
+      // ── Session log ──
+      const logSection = document.createElement('div');
+      logSection.innerHTML = `<div class="pom-detail-section">Session Log</div>`;
+
+      if (subj.sessions.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'font-size:0.74rem;color:var(--ink-muted);font-style:italic;padding:0.2rem 0';
+        empty.textContent = 'No sessions recorded yet — start the timer!';
+        logSection.appendChild(empty);
+      } else {
+        const logList = document.createElement('ul');
+        logList.className = 'pom-session-log';
+        // Show newest first
+        [...subj.sessions].reverse().forEach((sess, ri) => {
+          const realIdx = subj.sessions.length - 1 - ri;
+          const li = document.createElement('li');
+          li.className = 'pom-session-entry';
+          li.innerHTML = `
+            <div style="display:flex;flex-direction:column;flex:1;gap:0.1rem">
+              <span class="pom-session-note">${sess.note || '—'}</span>
+              <span style="font-size:0.62rem;color:var(--ink-muted)">${sess.date}</span>
+            </div>
+            <span class="pom-session-dur">${durFmt(sess.dur)}</span>
+            <button class="pom-session-del" data-idx="${realIdx}">🗑</button>
+          `;
+          li.querySelector('.pom-session-del').addEventListener('click', () => {
+            subj.totalSec -= subj.sessions[realIdx].dur;
+            if (subj.totalSec < 0) subj.totalSec = 0;
+            subj.sessions.splice(realIdx, 1);
+            renderPomDetail();
+            renderPomStats();
+          });
+          logList.appendChild(li);
+        });
+        logSection.appendChild(logList);
+      }
+      wrap.appendChild(logSection);
+
+      col.appendChild(wrap);
+    }
+
+    // ── Ring update ──
+    function pomUpdateRing() {
+      document.getElementById('pomDisplay').textContent = pomFmt(pomTime);
+      const circle = document.querySelector('#pomRing .progress');
+      if (circle) {
+        circle.style.strokeDasharray  = CIRCUM;
+        circle.style.strokeDashoffset = CIRCUM * (1 - pomTime / pomFull);
+      }
+    }
+
+    // ── Session complete: ask "what did you study?" ──
+    function pomSessionComplete(elapsed) {
+      clearInterval(pomTimer);
+      pomRunning    = false;
+      pomLiveOffset = 0;   // clear live offset — totalSec gets the real value below
+
+      const subj = pomSubjects.find(s => s.id === pomActiveId);
+
+      if (!subj) {
+        // No subject selected — just notify
+        pomTime = pomFull; pomElapsed = 0; pomUpdateRing();
+        alert('🎉 Session done! Select a subject next time to track your progress.');
+        return;
+      }
+
+      // Prompt for study note
+      const note = prompt(
+        `✅ ${durFmt(elapsed)} session complete!
+
+What did you study for ${subj.name}?
+(Leave blank to skip)`,
+        ''
+      );
+
+      // Record session
+      subj.sessions.push({ note: note || '', dur: elapsed, date: todayStr() });
+      subj.totalSec += elapsed;
+
+      // Reset timer
+      pomTime = pomFull; pomElapsed = 0; pomUpdateRing();
+
+      // Refresh UI
+      renderPomStats();
+      renderPomDetail();
+      updatePomBadge();
+    }
+
+    // ── Start button ──
+    document.getElementById('pomStart').addEventListener('click', () => {
+      if (pomRunning) return;
+
+      // Warn if no subject selected (soft warning, not a block)
+      if (!pomActiveId && pomSubjects.length > 0) {
+        const ok = confirm('No subject selected. Start untracked session anyway?');
+        if (!ok) return;
+      }
+
+      pomRunning = true;
+      pomTimer = setInterval(() => {
+        if (pomTime > 0) {
+          pomTime--;
+          pomElapsed++;
+          pomUpdateRing();
+
+          // ── Live stats: add 1 second to the active subject's running total
+          //    so the Yeolputa bar counts up in real time.
+          //    We temporarily add pomElapsed to the subject's totalSec each tick
+          //    so pomGrandTotal() reflects current progress.
+          //    When the session ends, pomSessionComplete() does the final write.
+          const liveSubj = pomSubjects.find(s => s.id === pomActiveId);
+          if (liveSubj) {
+            // Increment by 1 each tick — the session completion will re-add
+            // the full elapsed block, so we store a "live offset" separately
+            // to avoid double-counting.  We track it on pomLiveOffset.
+            pomLiveOffset = pomElapsed;
+          }
+          // Always re-render stats so the bar moves every second
+          renderPomStats();
+
+        } else {
+          pomSessionComplete(pomElapsed);
+        }
+      }, 1000);
+    });
+
+    // ── Reset button ──
+    document.getElementById('pomReset').addEventListener('click', () => {
+      clearInterval(pomTimer);
+      pomRunning    = false;
+      pomElapsed    = 0;
+      pomLiveOffset = 0;   // clear live offset so stats bar resets correctly
+      pomTime       = pomFull;
+      pomUpdateRing();
+      renderPomStats();    // re-render stats after reset
+    });
+
+    // ── Skip button — marks session done immediately ──
+    document.getElementById('pomSkip').addEventListener('click', () => {
+      if (!pomRunning && pomElapsed === 0) return; // nothing to skip
+      const elapsed = pomElapsed > 0 ? pomElapsed : pomFull - pomTime;
+      clearInterval(pomTimer);
+      pomRunning = false;
+      pomSessionComplete(elapsed);
+    });
+
+    // ── Duration picker ──
+    document.getElementById('pomDuration').addEventListener('change', e => {
+      const mins = parseInt(e.target.value);
+      pomFull    = mins * 60;
+      pomTime    = pomFull;
+      pomElapsed = 0;
+      clearInterval(pomTimer);
+      pomRunning = false;
+      pomUpdateRing();
+      // Update ring label
+      document.getElementById('pomRingLabel').textContent =
+        mins <= 15 ? 'break' : 'focus';
+    });
+
+    // ── Add subject form ──
+    document.getElementById('pomAddSubjectBtn').addEventListener('click', () => {
+      const form = document.getElementById('pomAddSubjectForm');
+      form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+      if (form.style.display === 'flex') document.getElementById('pomSubjectNameInput').focus();
+    });
+
+    document.getElementById('pomSubjectCancel').addEventListener('click', () => {
+      document.getElementById('pomAddSubjectForm').style.display = 'none';
+      document.getElementById('pomSubjectNameInput').value = '';
+    });
+
+    const addSubjectFn = () => {
+      const inp  = document.getElementById('pomSubjectNameInput');
+      const name = inp.value.trim();
+      if (!name) return;
+      const newSubj2 = { id: pomNextSubjId++, name, totalSec: 0, sessions: [], todos: [] };
+      pomSubjects.push(newSubj2);
+      inp.value = '';
+      document.getElementById('pomAddSubjectForm').style.display = 'none';
+      // Auto-select the new subject
+      pomActiveId = newSubj2.id;
+      renderPomTabs();
+      renderPomDetail();
+      updatePomBadge();
+      // Also update sidebar subject list if it exists
+      if (typeof renderSbSubjects === 'function') renderSbSubjects();
+    };
+
+    document.getElementById('pomSubjectConfirm').addEventListener('click', addSubjectFn);
+    document.getElementById('pomSubjectNameInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') addSubjectFn();
+    });
+
+    // ── Init ──
+    pomUpdateRing();
+    renderPomStats();
+    renderRevSubjectPicker();
+
+
+    // ═════════════════════════════════════════════
+    // TO-DO LIST
+    // ═════════════════════════════════════════════
+    let tasks = ['Finish homework', 'Study Biology'];
+
+    function renderTasks() {
+      const ul = document.getElementById('todoList');
+      ul.innerHTML = '';
+      tasks.forEach((t, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span class="tl-spacer">${t}</span>
+          <button class="tl-ren" data-i="${i}">✏️</button>
+          <button class="tl-del" data-i="${i}">🗑️</button>
+        `;
+        li.querySelector('.tl-del').addEventListener('click', () => { tasks.splice(i,1); renderTasks(); });
+        li.querySelector('.tl-ren').addEventListener('click', () => {
+          const n = prompt('Rename task:', tasks[i]);
+          if (n) { tasks[i] = n; renderTasks(); }
+        });
+        ul.appendChild(li);
+      });
+    }
+
+    const addTask = () => {
+      const inp = document.getElementById('taskInput');
+      const v   = inp.value.trim();
+      if (v) { tasks.push(v); inp.value = ''; renderTasks(); }
+    };
+    document.getElementById('addTaskBtn').addEventListener('click', addTask);
+    document.getElementById('taskInput').addEventListener('keypress', e => { if (e.key === 'Enter') addTask(); });
+    renderTasks();
+
+
+    // ═════════════════════════════════════════════
+    // GRADES
+    // ═════════════════════════════════════════════
+    let grades = [];
+
+    function gcls(g) { return g >= 75 ? 'high' : g >= 50 ? 'mid' : 'low'; }
+    function gavg() {
+      return grades.length ? Math.round(grades.reduce((a,g) => a + g.grade, 0) / grades.length) : null;
+    }
+
+    function renderGrades() {
+      const el  = document.getElementById('gradeList');
+      el.innerHTML = '';
+      grades.forEach((g, i) => {
+        const row = document.createElement('div');
+        row.className = 'grade-row';
+        row.innerHTML = `
+          <span style="color:var(--ink-light)">${g.subject}</span>
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span class="gscore ${gcls(g.grade)}">${g.grade}%</span>
+            <button onclick="delGrade(${i})" style="background:none;border:none;font-size:0.75rem;color:var(--ink-muted)">🗑️</button>
+          </div>
+        `;
+        el.appendChild(row);
+      });
+
+      const avg = gavg();
+      document.getElementById('gradeAvgNum').textContent  = avg !== null ? avg + '%' : '—';
+      document.getElementById('gradeAvgMeta').textContent = avg !== null
+        ? `Avg across ${grades.length} subject${grades.length > 1 ? 's' : ''}`
+        : 'No grades yet';
+      if (avg !== null) {
+        const c = gcls(avg);
+        document.getElementById('gradeAvgNum').style.color = c==='high' ? 'var(--green)' : c==='mid' ? 'var(--accent)' : '#e05050';
+      }
+    }
+
+    window.delGrade = i => { grades.splice(i,1); renderGrades(); };
+
+    const addGrade = () => {
+      const s = document.getElementById('subjectInput').value.trim();
+      const g = parseFloat(document.getElementById('gradeInput').value);
+      if (!s || isNaN(g) || g < 0 || g > 100) return;
+      grades.push({ subject: s, grade: g });
+      document.getElementById('subjectInput').value = '';
+      document.getElementById('gradeInput').value   = '';
+      renderGrades();
+    };
+    document.getElementById('addGradeBtn').addEventListener('click', addGrade);
+    document.getElementById('gradeInput').addEventListener('keypress', e => { if (e.key==='Enter') addGrade(); });
+    renderGrades();
+
+
+    // ═════════════════════════════════════════════
+    // CALENDAR
+    // ═════════════════════════════════════════════
+    function buildCalendar() {
+      const wd    = document.getElementById('calWd');
+      const days  = document.getElementById('calDays');
+      const mname = document.getElementById('calMonth');
+      const now   = new Date();
+      const yr    = now.getFullYear(), mo = now.getMonth();
+
+      /* Weekday headers */
+      wd.innerHTML = '';
+      ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+        const div = document.createElement('div');
+        div.className   = 'cal-wd';
+        div.textContent = d;
+        wd.appendChild(div);
+      });
+
+      mname.textContent = `${MONTHS[mo]} ${yr}`;
+      days.innerHTML    = '';
+
+      const firstDay = new Date(yr, mo, 1).getDay();
+      const lastDate = new Date(yr, mo+1, 0).getDate();
+
+      /* Blank cells before month start */
+      for (let i = 0; i < firstDay; i++) days.appendChild(document.createElement('div'));
+
+      /* Day cells */
+      for (let d = 1; d <= lastDate; d++) {
+        const div = document.createElement('div');
+        div.textContent = d;
+        if (d === now.getDate()) div.classList.add('today');
+        days.appendChild(div);
+      }
+    }
+
+    buildCalendar();
+
+
+    // ═════════════════════════════════════════════
+    // SEARCH — live filter folders
+    // ═════════════════════════════════════════════
+    document.getElementById('searchInput').addEventListener('input', () => {
+      if (document.getElementById('homeView').style.display === 'none') showHome();
+      renderFolders();
+    });
+
+
+    // ═════════════════════════════════════════════════════════
+    // REVISION NOTES SYSTEM
+    // ─────────────────────────────────────────────────────────
+    // revisionNotes = array of note objects:
+    // {
+    //   id:       number,
+    //   name:     string,      display title
+    //   type:     'image'|'pdf',
+    //   data:     string,      base64 data URL
+    //   subject:  string,      subject name ('' = general)
+    //   subjId:   number|null, pomSubjects id match
+    //   category: string,      free-text category e.g. 'Flashcards'
+    //   date:     string,      e.g. '5 Mar'
+    // }
+    // ═════════════════════════════════════════════════════════
+    let revisionNotes  = [];
+    let revNextNoteId  = 1;
+
+    // ── Populate subject picker dropdowns ──
+    function renderRevSubjectPicker() {
+      ['revSubjectPicker','revFilterSubject'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const val = sel.value; // preserve current selection
+        // Keep first option, remove the rest
+        while (sel.options.length > 1) sel.remove(1);
+        pomSubjects.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value       = s.name;
+          opt.textContent = s.name;
+          sel.appendChild(opt);
+        });
+        sel.value = val; // restore
+      });
+    }
+
+    // ── Populate category filter ──
+    function renderRevCategoryFilter() {
+      const sel = document.getElementById('revFilterCategory');
+      if (!sel) return;
+      const val = sel.value;
+      while (sel.options.length > 1) sel.remove(1);
+      const cats = [...new Set(revisionNotes.map(n => n.category).filter(Boolean))];
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        sel.appendChild(opt);
+      });
+      sel.value = val;
+    }
+
+    // ── Handle file uploads ──
+    document.getElementById('noteUpload').addEventListener('change', e => {
+      const files  = Array.from(e.target.files);
+      if (!files.length) return;
+
+      const subjName  = document.getElementById('revSubjectPicker').value;
+      const category  = document.getElementById('revCategoryInput').value.trim();
+      const titleBase = document.getElementById('revTitleInput').value.trim();
+
+      // Find matching subject id
+      const matchSubj = pomSubjects.find(s => s.name === subjName);
+
+      files.forEach((file, fi) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const isPDF = file.type === 'application/pdf';
+          revisionNotes.push({
+            id:       revNextNoteId++,
+            name:     titleBase || file.name.replace(/\.[^/.]+$/, ''),
+            type:     isPDF ? 'pdf' : 'image',
+            data:     ev.target.result,
+            subject:  subjName,
+            subjId:   matchSubj ? matchSubj.id : null,
+            category: category,
+            date:     todayStr()
+          });
+          // After last file, refresh UI
+          if (fi === files.length - 1) {
+            renderRevNotesList();
+            renderRevSubjectPicker();
+            renderRevCategoryFilter();
+            // Clear inputs
+            document.getElementById('revTitleInput').value    = '';
+            document.getElementById('revCategoryInput').value = '';
+            document.getElementById('noteUpload').value       = '';
+            // Refresh subject panel if open
+            if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // ── Render the notes list in the Revision panel ──
+    function renderRevNotesList() {
+      const container = document.getElementById('revNotesList');
+      if (!container) return;
+
+      const filterSubj = document.getElementById('revFilterSubject')?.value || '';
+      const filterCat  = document.getElementById('revFilterCategory')?.value || '';
+
+      const shown = revisionNotes.filter(n => {
+        if (filterSubj && n.subject !== filterSubj) return false;
+        if (filterCat  && n.category !== filterCat)  return false;
+        return true;
+      });
+
+      container.innerHTML = '';
+      const countEl = document.getElementById('revNoteCount');
+      if (countEl) countEl.textContent = `${shown.length} note${shown.length !== 1 ? 's' : ''}`;
+
+      if (shown.length === 0) {
+        container.innerHTML = '<div style="font-size:0.78rem;color:var(--ink-muted);font-style:italic;padding:0.5rem 0">No notes yet — upload above</div>';
+        return;
+      }
+
+      shown.forEach(n => {
+        const row = document.createElement('div');
+        row.className = 'rev-note-row';
+
+        // Thumbnail or badge
+        let thumbHTML;
+        if (n.type === 'image') {
+          thumbHTML = `<img class="rev-note-thumb" src="${n.data}" alt="${n.name}" />`;
+        } else {
+          thumbHTML = `<div class="rev-note-type-badge">📄</div>`;
+        }
+
+        // Tags
+        const subjTag = n.subject
+          ? `<span class="rev-note-tag subject">${n.subject}</span>` : '';
+        const catTag  = n.category
+          ? `<span class="rev-note-tag category">${n.category}</span>` : '';
+
+        row.innerHTML = `
+          ${thumbHTML}
+          <div class="rev-note-meta">
+            <div class="rev-note-title">${n.name}</div>
+            <div class="rev-note-tags">${subjTag}${catTag}</div>
+            <div class="rev-note-date">${n.date}</div>
+          </div>
+          <div class="rev-note-actions">
+            <button class="rev-note-btn" onclick="viewNote(${n.id})" title="View">👁</button>
+            <button class="rev-note-btn del" onclick="deleteNote(${n.id})" title="Delete">🗑</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // ── View note (open in new tab) ──
+    window.viewNote = function(id) {
+      const n = revisionNotes.find(x => x.id === id);
+      if (!n) return;
+      const win = window.open();
+      if (n.type === 'image') {
+        win.document.write(`<img src="${n.data}" style="max-width:100%;height:auto" />`);
+      } else {
+        win.document.write(`<iframe src="${n.data}" style="width:100%;height:100vh;border:none"></iframe>`);
+      }
+    };
+
+    // ── Delete note ──
+    window.deleteNote = function(id) {
+      revisionNotes = revisionNotes.filter(x => x.id !== id);
+      renderRevNotesList();
+      renderRevCategoryFilter();
+      if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+    };
+
+    // Wire filter dropdowns
+    document.getElementById('revFilterSubject')?.addEventListener('change',  renderRevNotesList);
+    document.getElementById('revFilterCategory')?.addEventListener('change', renderRevNotesList);
+
+    // ═════════════════════════════════════════════════════════
+    // SIDEBAR SUBJECTS
+    // ─────────────────────────────────────────────────────────
+    // pomSubjects (defined in Pomodoro section) is the single
+    // source of truth. Subjects added here OR in the Pomodoro
+    // tab both end up in pomSubjects and appear in both places.
+    //
+    // Each subject sidebar item navigates to panel-subject
+    // and calls renderSubjectPanel(id) to show its data.
+    // ═════════════════════════════════════════════════════════
+
+    // Subject emojis — one auto-assigned per subject (cycles)
+    const SUBJ_EMOJIS = ['🧬','📐','⚗️','📖','🌍','🎵','💻','🏛️','🎨','📜','🔬','📊'];
+
+    // ── Render sidebar subject list ──
+    function renderSbSubjects() {
+      const list = document.getElementById('sbSubjectList');
+      if (!list) return;
+      list.innerHTML = '';
+
+      pomSubjects.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'sb-item' + (currentSubjectId === s.id ? ' active' : '');
+        el.dataset.subjectId = s.id;
+        // Auto-assign emoji based on index in array
+        const emoji = SUBJ_EMOJIS[(pomSubjects.indexOf(s)) % SUBJ_EMOJIS.length];
+        el.innerHTML = `
+          <span class="si">${emoji}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${s.name}</span>
+          <button class="subj-sb-del" data-id="${s.id}"
+            style="background:none;border:none;font-size:0.6rem;color:var(--ink-muted);opacity:0;transition:opacity 0.15s;margin-left:auto"
+            title="Remove subject">✕</button>
+        `;
+        // Show delete on hover
+        el.addEventListener('mouseenter', () => el.querySelector('.subj-sb-del').style.opacity = '1');
+        el.addEventListener('mouseleave', () => el.querySelector('.subj-sb-del').style.opacity = '0');
+
+        el.addEventListener('click', e => {
+          if (e.target.classList.contains('subj-sb-del')) return;
+          openSubjectPanel(s.id);
+        });
+
+        el.querySelector('.subj-sb-del').addEventListener('click', e => {
+          e.stopPropagation();
+          if (!confirm(`Remove "${s.name}" and all its data?`)) return;
+          pomSubjects = pomSubjects.filter(x => x.id !== s.id);
+          if (currentSubjectId === s.id) { currentSubjectId = null; showHome(); }
+          if (pomActiveId === s.id) { pomActiveId = null; updatePomBadge(); renderPomTabs(); }
+          renderSbSubjects();
+          renderPomStats();
+        });
+
+        list.appendChild(el);
+      });
+
+      // Show placeholder if no subjects
+      if (pomSubjects.length === 0) {
+        const ph = document.createElement('div');
+        ph.style.cssText = 'padding:0.3rem 0.9rem;font-size:0.72rem;color:var(--ink-muted);font-style:italic';
+        ph.textContent = 'No subjects yet — press ＋';
+        list.appendChild(ph);
+      }
+    }
+
+    // ── Sidebar add-subject form ──
+    let currentSubjectId = null;
+
+    function openAddSubjectSidebar() {
+      const form = document.getElementById('sbAddSubjectForm');
+      form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+      if (form.style.display === 'flex') document.getElementById('sbSubjectInput').focus();
+    }
+
+    function confirmAddSubjectSidebar() {
+      const inp  = document.getElementById('sbSubjectInput');
+      const name = inp.value.trim();
+      if (!name) return;
+      const newSubj = { id: pomNextSubjId++, name, totalSec: 0, sessions: [], todos: [] };
+      pomSubjects.push(newSubj);
+      inp.value = '';
+      document.getElementById('sbAddSubjectForm').style.display = 'none';
+      // Also refresh the Pomodoro tab list
+      renderPomTabs();
+      renderSbSubjects();
+      renderRevSubjectPicker();
+      renderSubjectFolders();
+      // Auto-open the new subject panel
+      openSubjectPanel(newSubj.id);
+    }
+
+    function cancelAddSubjectSidebar() {
+      document.getElementById('sbAddSubjectForm').style.display = 'none';
+      document.getElementById('sbSubjectInput').value = '';
+    }
+
+    document.getElementById('sbSubjectInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') confirmAddSubjectSidebar();
+    });
+
+    // ── Open subject panel ──
+    function openSubjectPanel(id) {
+      currentSubjectId = id;
+      const subj = pomSubjects.find(s => s.id === id);
+      if (!subj) return;
+
+      // Update header
+      const emoji = SUBJ_EMOJIS[pomSubjects.indexOf(subj) % SUBJ_EMOJIS.length];
+      document.getElementById('subjectPanelEmoji').textContent = emoji;
+      document.getElementById('subjectPanelTitle').textContent = subj.name;
+      document.getElementById('subjectPanelSub').textContent   = 'All tracked data for ' + subj.name;
+
+      // Show panel
+      document.getElementById('homeView').style.display = 'none';
+      document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('visible'));
+      document.querySelector('.main-area').classList.add('panel-active');
+      document.getElementById('panel-subject').classList.add('visible');
+      document.getElementById('addressText').textContent = `Tangent / Dashboard / ${subj.name}`;
+      document.getElementById('pathLabel').textContent   = subj.name;
+
+      // Mark active in sidebar
+      document.querySelectorAll('.sb-item[data-subject-id]').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.subjectId) === id);
+      });
+      document.querySelectorAll('.sb-item[data-nav]').forEach(el => el.classList.remove('active'));
+
+      renderSubjectPanel(id);
+      renderSbSubjects();
+    }
+
+    // ═════════════════════════════════════════════════════════
+    // SUBJECT PANEL RENDERER
+    // Pulls data from: pomSubjects, grades, tasks, cal events
+    // and lays them out as data cards in a 2-col grid.
+    // ─────────────────────────────────────────────────────────
+    // To add a new card section: add another card div inside
+    // the content element at the end of this function.
+    // ═════════════════════════════════════════════════════════
+    function renderSubjectPanel(id) {
+      const subj    = pomSubjects.find(s => s.id === id);
+      const content = document.getElementById('subjectPanelContent');
+      if (!subj || !content) return;
+      content.innerHTML = '';
+
+      // ── helper: make a card ──
+      function makeCard(titleIcon, titleText, wide) {
+        const card = document.createElement('div');
+        card.className = 'subj-card' + (wide ? ' wide' : '');
+        card.innerHTML = `<div class="subj-card-title"><span>${titleIcon}</span>${titleText}</div>`;
+        content.appendChild(card);
+        return card;
+      }
+
+      // ── helper: empty state ──
+      function emptyRow(card, msg) {
+        const d = document.createElement('div');
+        d.className = 'subj-empty';
+        d.textContent = msg;
+        card.appendChild(d);
+      }
+
+      // ── 1. STUDY TIME (Pomodoro) ──────────────────────────
+      const timeCard = makeCard('⏱', 'Study Time');
+      const h = Math.floor(subj.totalSec / 3600);
+      const m = Math.floor((subj.totalSec % 3600) / 60);
+      const s = subj.totalSec % 60;
+
+      const statEl = document.createElement('div');
+      statEl.className = 'subj-card-stat';
+      statEl.textContent = subj.totalSec > 0
+        ? (h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`)
+        : '0m';
+      timeCard.appendChild(statEl);
+
+      const metaEl = document.createElement('div');
+      metaEl.className = 'subj-card-meta';
+      metaEl.textContent = subj.sessions.length > 0
+        ? `${subj.sessions.length} session${subj.sessions.length > 1 ? 's' : ''} recorded`
+        : 'No sessions yet';
+      timeCard.appendChild(metaEl);
+
+      // Recent sessions mini-list
+      if (subj.sessions.length > 0) {
+        const ul = document.createElement('ul');
+        ul.className = 'subj-list';
+        ul.style.marginTop = '0.6rem';
+        [...subj.sessions].reverse().slice(0, 3).forEach(sess => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span>${sess.note || '—'}</span>
+            <span class="subj-li-val">${durFmt(sess.dur)}</span>
+          `;
+          ul.appendChild(li);
+        });
+        timeCard.appendChild(ul);
+      }
+
+      // ── 2. GRADE for this subject ─────────────────────────
+      const gradeCard = makeCard('📊', 'Grade');
+      // Find matching grade entry (case-insensitive partial match)
+      const matchedGrade = grades.find(g =>
+        g.subject.toLowerCase().includes(subj.name.toLowerCase()) ||
+        subj.name.toLowerCase().includes(g.subject.toLowerCase())
+      );
+
+      if (matchedGrade) {
+        const cls = gcls(matchedGrade.grade);
+        const gStat = document.createElement('div');
+        gStat.className = 'subj-card-stat';
+        gStat.style.color = cls === 'high' ? 'var(--green)' : cls === 'mid' ? 'var(--accent)' : '#e05050';
+        gStat.textContent = matchedGrade.grade + '%';
+        gradeCard.appendChild(gStat);
+        const gMeta = document.createElement('div');
+        gMeta.className = 'subj-card-meta';
+        gMeta.textContent = matchedGrade.subject;
+        gradeCard.appendChild(gMeta);
+        // Add grade input row
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:0.35rem;margin-top:0.6rem';
+        row.innerHTML = `
+          <input type="number" class="t-input" id="subjGradeInp_${id}" placeholder="Update %" min="0" max="100"
+                 style="height:26px;font-size:0.75rem;padding:0.2rem 0.5rem;flex:1" />
+          <button class="t-btn primary" style="height:26px;font-size:0.7rem;padding:0 0.5rem"
+                  onclick="updateSubjGrade(${id}, '${matchedGrade.subject}')">Save</button>
+        `;
+        gradeCard.appendChild(row);
+      } else {
+        emptyRow(gradeCard, 'No grade logged — add one in Grade Tracker');
+        // Quick-add grade
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:0.35rem;margin-top:0.5rem';
+        row.innerHTML = `
+          <input type="number" class="t-input" id="subjGradeInp_${id}" placeholder="Add grade %" min="0" max="100"
+                 style="height:26px;font-size:0.75rem;padding:0.2rem 0.5rem;flex:1" />
+          <button class="t-btn primary" style="height:26px;font-size:0.7rem;padding:0 0.5rem"
+                  onclick="addSubjGrade(${id}, '${subj.name}')">Add</button>
+        `;
+        gradeCard.appendChild(row);
+      }
+
+      // ── 3. LINKED TASKS ───────────────────────────────────
+      const taskCard = makeCard('📝', 'Tasks for ' + subj.name, false);
+      if (subj.todos.length === 0) {
+        emptyRow(taskCard, 'No tasks linked yet');
+      } else {
+        const ul = document.createElement('ul');
+        ul.className = 'subj-list';
+        subj.todos.forEach((t, ti) => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <span style="${t.done ? 'text-decoration:line-through;color:var(--ink-muted)' : ''}">${t.text}</span>
+            <span class="subj-li-val" style="color:${t.done ? 'var(--green)' : 'var(--ink-muted)'}">
+              ${t.done ? '✓' : '○'}
+            </span>
+          `;
+          li.style.cursor = 'pointer';
+          li.addEventListener('click', () => {
+            subj.todos[ti].done = !subj.todos[ti].done;
+            renderSubjectPanel(id);
+          });
+          ul.appendChild(li);
+        });
+        taskCard.appendChild(ul);
+      }
+      // Add task input
+      const addTaskRow = document.createElement('div');
+      addTaskRow.style.cssText = 'display:flex;gap:0.35rem;margin-top:0.5rem';
+      addTaskRow.innerHTML = `
+        <input type="text" class="t-input" id="subjTaskInp_${id}" placeholder="Add task…"
+               style="height:26px;font-size:0.75rem;padding:0.2rem 0.5rem;flex:1" />
+        <button class="t-btn primary" id="subjTaskBtn_${id}"
+                style="height:26px;font-size:0.7rem;padding:0 0.5rem">+</button>
+      `;
+      taskCard.appendChild(addTaskRow);
+      setTimeout(() => {
+        const inp = document.getElementById(`subjTaskInp_${id}`);
+        const btn = document.getElementById(`subjTaskBtn_${id}`);
+        if (!inp || !btn) return;
+        const fn = () => {
+          const v = inp.value.trim();
+          if (v) { subj.todos.push({ text: v, done: false }); inp.value = ''; renderSubjectPanel(id); renderPomDetail(); }
+        };
+        btn.addEventListener('click', fn);
+        inp.addEventListener('keypress', e => { if (e.key === 'Enter') fn(); });
+      }, 0);
+
+      // ── 4. SESSION LOG (full) ─────────────────────────────
+      const sessCard = makeCard('📋', 'Session Log', false);
+      if (subj.sessions.length === 0) {
+        emptyRow(sessCard, 'Complete a Pomodoro session to see logs here');
+      } else {
+        const ul = document.createElement('ul');
+        ul.className = 'subj-list';
+        [...subj.sessions].reverse().slice(0, 5).forEach(sess => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:0.05rem;flex:1">
+              <span>${sess.note || '—'}</span>
+              <span style="font-size:0.6rem;color:var(--ink-muted)">${sess.date}</span>
+            </div>
+            <span class="subj-li-val" style="color:var(--accent)">${durFmt(sess.dur)}</span>
+          `;
+          ul.appendChild(li);
+        });
+        sessCard.appendChild(ul);
+        if (subj.sessions.length > 5) {
+          const more = document.createElement('div');
+          more.className = 'subj-empty';
+          more.style.marginTop = '0.3rem';
+          more.textContent = `+${subj.sessions.length - 5} more in Pomodoro tab`;
+          sessCard.appendChild(more);
+        }
+      }
+
+      // ── 5. REVISION NOTES for this subject ──────────────
+      const notesCard = makeCard('📘', 'Notes', true);
+      // Find notes matching this subject
+      const subjNotes = revisionNotes.filter(n => n.subjId === id || n.subject === subj.name);
+
+      if (subjNotes.length === 0) {
+        const emp = document.createElement('div');
+        emp.className = 'subj-empty';
+        emp.innerHTML = 'No notes yet — upload in Revision and tag this subject';
+        notesCard.appendChild(emp);
+      } else {
+        // Group by category
+        const cats = [...new Set(subjNotes.map(n => n.category || 'General'))];
+        cats.forEach(cat => {
+          const catNotes = subjNotes.filter(n => (n.category || 'General') === cat);
+
+          // Category heading
+          const catHead = document.createElement('div');
+          catHead.style.cssText = 'font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin:0.6rem 0 0.3rem;padding-top:0.3rem;border-top:1px solid var(--rule)';
+          catHead.textContent = cat;
+          notesCard.appendChild(catHead);
+
+          // Notes grid for this category
+          const noteGrid = document.createElement('div');
+          noteGrid.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem';
+
+          catNotes.forEach(n => {
+            const tile = document.createElement('div');
+            tile.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:0.3rem;cursor:pointer';
+            tile.title = n.name;
+
+            // Thumbnail
+            let thumbEl;
+            if (n.type === 'image') {
+              thumbEl = document.createElement('img');
+              thumbEl.src = n.data;
+              thumbEl.style.cssText = 'width:56px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--rule)';
+            } else {
+              thumbEl = document.createElement('div');
+              thumbEl.style.cssText = 'width:56px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-inset);border-radius:4px;border:1px solid var(--rule)';
+              thumbEl.textContent = '📄';
+            }
+
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size:0.6rem;color:var(--ink-muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center';
+            label.textContent = n.name;
+
+            tile.appendChild(thumbEl);
+            tile.appendChild(label);
+            tile.addEventListener('click', () => viewNote(n.id));
+            noteGrid.appendChild(tile);
+          });
+
+          notesCard.appendChild(noteGrid);
+        });
+      }
+
+      // Upload shortcut inside subject panel
+      const uploadShortcut = document.createElement('div');
+      uploadShortcut.style.cssText = 'display:flex;gap:0.4rem;margin-top:0.7rem;align-items:center';
+      uploadShortcut.innerHTML = `
+        <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.6rem"
+                onclick="quickUploadForSubject('${subj.name}')">
+          📎 Add Note to ${subj.name}
+        </button>
+      `;
+      notesCard.appendChild(uploadShortcut);
+
+      // ── 6. START SESSION button ───────────────────────────
+      const startCard = makeCard('▶', 'Quick Start', false);
+      startCard.innerHTML += `
+        <div class="subj-empty" style="margin-bottom:0.5rem">
+          Start a Pomodoro session for ${subj.name}
+        </div>
+        <button class="t-btn primary" style="width:100%;padding:0.5rem"
+                onclick="quickStartSubject(${id})">
+          ⏱ Start Session for ${subj.name}
+        </button>
+      `;
+    }
+
+    // ── Quick upload: navigate to Revision, pre-select this subject ──
+    window.quickUploadForSubject = function(subjName) {
+      // Pre-select the subject in the revision picker
+      const picker = document.getElementById('revSubjectPicker');
+      if (picker) picker.value = subjName;
+      // Navigate to revision panel
+      const f = folders.find(x => x.panel === 'revision');
+      if (f) openFolder(f.id);
+      else {
+        document.getElementById('homeView').style.display = 'none';
+        document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('visible'));
+        document.querySelector('.main-area').classList.add('panel-active');
+        document.getElementById('panel-revision').classList.add('visible');
+        document.getElementById('addressText').textContent = 'Tangent / Dashboard / Revision';
+        document.getElementById('pathLabel').textContent = 'Revision';
+      }
+    };
+
+    // ── Quick-start: navigate to Pomodoro, select this subject ──
+    function quickStartSubject(id) {
+      // Set the active subject FIRST so the panel renders correctly
+      pomActiveId = id;
+
+      // Always navigate directly to the pomodoro panel
+      document.getElementById('homeView').style.display = 'none';
+      document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('visible'));
+      document.querySelector('.main-area').classList.add('panel-active');
+      document.getElementById('panel-pomodoro').classList.add('visible');
+
+      // Update address bar
+      document.getElementById('addressText').textContent = 'Tangent / Dashboard / Pomodoro';
+      document.getElementById('pathLabel').textContent   = 'Pomodoro';
+      setActiveSb('pomodoro');
+
+      // Refresh all pomodoro UI with the selected subject
+      renderPomTabs();
+      renderPomDetail();
+      updatePomBadge();
+    }
+
+    // ── Grade helpers called from subject panel ──
+    window.addSubjGrade = function(subjId, name) {
+      const inp = document.getElementById('subjGradeInp_' + subjId);
+      const g   = parseFloat(inp?.value);
+      if (isNaN(g) || g < 0 || g > 100) return;
+      grades.push({ subject: name, grade: g });
+      renderGrades();
+      renderSubjectPanel(subjId);
+    };
+
+    window.updateSubjGrade = function(subjId, subjectName) {
+      const inp = document.getElementById('subjGradeInp_' + subjId);
+      const g   = parseFloat(inp?.value);
+      if (isNaN(g) || g < 0 || g > 100) return;
+      const existing = grades.find(x => x.subject === subjectName);
+      if (existing) existing.grade = g;
+      else grades.push({ subject: subjectName, grade: g });
+      renderGrades();
+      renderSubjectPanel(subjId);
+    };
+
+    // ── Re-render sidebar subjects whenever pomSubjects changes ──
+    // Patch addSubjectFn and pomSubjectConfirm to also call renderSbSubjects
+    const _origAddSubjectFn = addSubjectFn; // defined in pomodoro section
+    // We instead wrap at the confirm button level:
+    document.getElementById('pomSubjectConfirm').addEventListener('click', () => {
+      renderSbSubjects();
+    });
+
+    // ═════════════════════════════════════════════
+    // INITIAL RENDER
+    // ═════════════════════════════════════════════
+    showHome();
+    renderSbSubjects();
+    renderRevSubjectPicker();
+
+
+    // ═════════════════════════════════════════════════════════
+    // CUSTOM THEME EDITOR
+    // ─────────────────────────────────────────────────────────
+    // THEME_VARS defines every CSS variable the user can edit.
+    // Each entry:
+    //   key   = the CSS variable name (without --)
+    //   label = friendly display name
+    //   desc  = short hint shown below the label
+    //   group = section heading it belongs to
+    //
+    // To ADD a new variable: push a new object to THEME_VARS.
+    // To REMOVE one: delete its entry from the array.
+    // ═════════════════════════════════════════════════════════
+    const THEME_VARS = [
+      // ── Text colours ──
+      { key:'ink',        label:'Main text',        desc:'Headings, body text',           group:'Text' },
+      { key:'ink-light',  label:'Secondary text',   desc:'Labels, folder names',          group:'Text' },
+      { key:'ink-muted',  label:'Muted text',       desc:'Placeholders, hints',           group:'Text' },
+
+      // ── Backgrounds ──
+      { key:'bg',         label:'Page background',  desc:'Main window background',        group:'Backgrounds' },
+      { key:'bg-card',    label:'Card background',  desc:'Panels, view toolbar',          group:'Backgrounds' },
+      { key:'bg-inset',   label:'Inset background', desc:'Inputs, wells, palette panel',  group:'Backgrounds' },
+      { key:'sidebar-bg', label:'Sidebar',          desc:'Left navigation panel',         group:'Backgrounds' },
+      { key:'titlebar',   label:'Title bar',        desc:'Top bar + status bar',          group:'Backgrounds' },
+
+      // ── Accent / brand ──
+      { key:'accent',      label:'Accent colour',   desc:'Buttons, active states, rings', group:'Accent' },
+      { key:'accent-dark', label:'Accent dark',     desc:'Hover / pressed accent',        group:'Accent' },
+      { key:'primary',     label:'Primary blue',    desc:'Soft highlight (A9DEF9)',        group:'Accent' },
+      { key:'secondary',   label:'Secondary blue',  desc:'Brand blue, links',             group:'Accent' },
+
+      // ── Utility ──
+      { key:'rule',   label:'Borders / dividers', desc:'All border and rule lines',       group:'Utility' },
+      { key:'green',  label:'Success / high grade', desc:'Grade colours, status dot',    group:'Utility' },
+    ];
+
+    // ─────────────────────────────────────────────────────────
+    // EDITOR PRESETS
+    // Quick-apply full theme sets. Each has a name and a
+    // colour map keyed by THEME_VARS key values.
+    // To add a preset: push a new object with a name + colours.
+    // Not every key needs to be set — missing keys stay as-is.
+    // ─────────────────────────────────────────────────────────
+    const THEME_PRESETS = [
+      {
+        name: '☀️ Default Light',
+        colours: {
+          'ink':'#4c4c4c','ink-light':'#6a6a6a','ink-muted':'#9a9a9a',
+          'bg':'#fffdfb','bg-card':'#f5f2ee','bg-inset':'#ece8e3','sidebar-bg':'#edeae5','titlebar':'#e6e2dc',
+          'accent':'#539ec4','accent-dark':'#2a8bbc','primary':'#A9DEF9','secondary':'#2a8bbc',
+          'rule':'#dcd8d2','green':'#3aab6e'
+        }
+      },
+      {
+        name: '🌙 Casio Dark',
+        colours: {
+          'ink':'#d4e8f8','ink-light':'#8bb5d4','ink-muted':'#4a7190',
+          'bg':'#071624','bg-card':'#0c2035','bg-inset':'#091b2e','sidebar-bg':'#050e1b','titlebar':'#040d1a',
+          'accent':'#3b9eff','accent-dark':'#1a6fd4','primary':'#3b9eff','secondary':'#1a6fd4',
+          'rule':'#122840','green':'#00e080'
+        }
+      },
+      {
+        name: '🌸 Blossom',
+        colours: {
+          'ink':'#3d2b35','ink-light':'#7a4f62','ink-muted':'#b08898',
+          'bg':'#fff5f8','bg-card':'#ffe8ef','bg-inset':'#ffd6e4','sidebar-bg':'#fce3eb','titlebar':'#f7cdd9',
+          'accent':'#e06f95','accent-dark':'#c04570','primary':'#f7b8d0','secondary':'#c04570',
+          'rule':'#f0c0cf','green':'#5aab7e'
+        }
+      },
+      {
+        name: '🌿 Sage',
+        colours: {
+          'ink':'#1e2e22','ink-light':'#3d5c44','ink-muted':'#7a9980',
+          'bg':'#f4faf5','bg-card':'#e6f2e8','bg-inset':'#d4e8d8','sidebar-bg':'#dceede','titlebar':'#cce4d0',
+          'accent':'#3aab6e','accent-dark':'#2d7a4f','primary':'#a8d8a8','secondary':'#2d7a4f',
+          'rule':'#bcd8c0','green':'#3aab6e'
+        }
+      },
+      {
+        name: '🌑 Void',
+        colours: {
+          'ink':'#e8e8e8','ink-light':'#aaaaaa','ink-muted':'#555555',
+          'bg':'#0a0a0a','bg-card':'#141414','bg-inset':'#1a1a1a','sidebar-bg':'#0f0f0f','titlebar':'#050505',
+          'accent':'#ffffff','accent-dark':'#cccccc','primary':'#cccccc','secondary':'#bbbbbb',
+          'rule':'#2a2a2a','green':'#44dd88'
+        }
+      },
+      {
+        name: '☕ Mocha',
+        colours: {
+          'ink':'#2e1f0e','ink-light':'#6b4226','ink-muted':'#a07850',
+          'bg':'#fdf6ee','bg-card':'#f5e9d8','bg-inset':'#ecdcc6','sidebar-bg':'#ede0cc','titlebar':'#dfd0b4',
+          'accent':'#8b5a2b','accent-dark':'#5c3317','primary':'#d4a574','secondary':'#5c3317',
+          'rule':'#d8c4a0','green':'#4e8c3a'
+        }
+      },
+    ];
+
+    // Current working values in the editor (separate from live CSS
+    // until the user clicks Apply)
+    let editorValues = {};
+
+    // ─────────────────────────────────────────────────────────
+    // openThemeEditor
+    // Reads current CSS variable values from :root, seeds the
+    // editor rows, and opens the modal.
+    // ─────────────────────────────────────────────────────────
+    function openThemeEditor() {
+      const root    = document.documentElement;
+      const style   = getComputedStyle(root);
+
+      // Seed editor values from whatever is currently live
+      THEME_VARS.forEach(v => {
+        editorValues[v.key] = style.getPropertyValue('--' + v.key).trim();
+      });
+
+      renderThemeEditor();
+      document.getElementById('themeModal').classList.add('open');
+    }
+
+    function closeThemeEditor() {
+      document.getElementById('themeModal').classList.remove('open');
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // renderThemeEditor
+    // Builds the preview strip, preset buttons, and variable rows.
+    // Called once when the modal opens; also called after a
+    // preset is applied to refresh displayed values.
+    // ─────────────────────────────────────────────────────────
+    function renderThemeEditor() {
+      // ── Preview strip (coloured dots) ──
+      const strip = document.getElementById('themePreviewStrip');
+      // Keep only dots (remove old ones), preserve the label span
+      strip.querySelectorAll('.theme-preview-dot').forEach(d => d.remove());
+      // Show dots for accent, primary, bg, sidebar, bg-card, rule, green
+      ['bg','sidebar-bg','bg-card','bg-inset','accent','primary','secondary','green','rule'].forEach(k => {
+        const dot = document.createElement('div');
+        dot.className = 'theme-preview-dot';
+        dot.style.background = editorValues[k] || '#ccc';
+        dot.title = '--' + k;
+        strip.insertBefore(dot, strip.querySelector('.theme-preview-label'));
+      });
+
+      // ── Preset buttons ──
+      const presetBar = document.getElementById('themePresetBar');
+      presetBar.innerHTML = '';
+      THEME_PRESETS.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className   = 'theme-preset-btn';
+        btn.textContent = p.name;
+        btn.addEventListener('click', () => {
+          // Merge preset colours into editorValues
+          Object.assign(editorValues, p.colours);
+          renderThemeEditor(); // re-render rows with new values
+        });
+        presetBar.appendChild(btn);
+      });
+
+      // ── Variable rows ──
+      const container = document.getElementById('themeVarRows');
+      container.innerHTML = '';
+      let lastGroup = null;
+
+      THEME_VARS.forEach(v => {
+        // Insert group heading when group changes
+        if (v.group !== lastGroup) {
+          const gh = document.createElement('div');
+          gh.className   = 'theme-group';
+          gh.textContent = v.group;
+          container.appendChild(gh);
+          lastGroup = v.group;
+        }
+
+        const row = document.createElement('div');
+        row.className = 'theme-row';
+
+        // Label + description
+        const labelWrap = document.createElement('div');
+        labelWrap.innerHTML = `
+          <div class="theme-var-label">${v.label}</div>
+          <div class="theme-var-desc">--${v.key}</div>
+        `;
+
+        // Native colour picker input
+        const colourInput = document.createElement('input');
+        colourInput.type  = 'color';
+        colourInput.className = 'theme-colour-input';
+        colourInput.value = rgbToHex(editorValues[v.key] || '#888888');
+
+        // Hex text input
+        const hexInput = document.createElement('input');
+        hexInput.type      = 'text';
+        hexInput.className = 'theme-hex-input';
+        hexInput.value     = rgbToHex(editorValues[v.key] || '#888888');
+        hexInput.placeholder = '#rrggbb';
+
+        // Sync colour picker → hex box + editorValues
+        colourInput.addEventListener('input', () => {
+          const val = colourInput.value;
+          hexInput.value   = val;
+          editorValues[v.key] = val;
+          refreshPreviewStrip();
+        });
+
+        // Sync hex box → colour picker + editorValues
+        hexInput.addEventListener('input', () => {
+          const val = hexInput.value.trim();
+          if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+            colourInput.value = val;
+            editorValues[v.key] = val;
+            refreshPreviewStrip();
+          }
+        });
+
+        row.appendChild(labelWrap);
+        row.appendChild(colourInput);
+        row.appendChild(hexInput);
+        container.appendChild(row);
+      });
+    }
+
+    // Refresh just the preview dots without re-rendering everything
+    function refreshPreviewStrip() {
+      document.querySelectorAll('.theme-preview-dot').forEach(dot => {
+        const key = dot.title.replace('--','');
+        if (editorValues[key]) dot.style.background = editorValues[key];
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // applyTheme
+    // Writes all editorValues to CSS variables on :root,
+    // making changes live across the whole page.
+    // Also saves to localStorage so theme persists on reload.
+    // ─────────────────────────────────────────────────────────
+    function applyTheme() {
+      const root = document.documentElement;
+      THEME_VARS.forEach(v => {
+        if (editorValues[v.key]) root.style.setProperty('--' + v.key, editorValues[v.key]);
+      });
+      // Save to localStorage as JSON string
+      localStorage.setItem('tangent-custom-theme', JSON.stringify(editorValues));
+      closeThemeEditor();
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // resetTheme
+    // Removes all inline CSS variable overrides so the
+    // stylesheet defaults (light or dark) take over.
+    // Also clears localStorage saved theme.
+    // ─────────────────────────────────────────────────────────
+    function resetTheme() {
+      const root = document.documentElement;
+      THEME_VARS.forEach(v => root.style.removeProperty('--' + v.key));
+      localStorage.removeItem('tangent-custom-theme');
+      // Re-seed editor values from freshly computed defaults
+      const style = getComputedStyle(root);
+      THEME_VARS.forEach(v => {
+        editorValues[v.key] = style.getPropertyValue('--' + v.key).trim();
+      });
+      renderThemeEditor();
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // RESTORE saved theme on page load
+    // If the user previously applied a custom theme, read it
+    // back from localStorage and re-apply.
+    // ─────────────────────────────────────────────────────────
+    (function restoreSavedTheme() {
+      const saved = localStorage.getItem('tangent-custom-theme');
+      if (!saved) return;
+      try {
+        const vals = JSON.parse(saved);
+        const root = document.documentElement;
+        Object.entries(vals).forEach(([k, v]) => root.style.setProperty('--' + k, v));
+      } catch(e) { /* ignore corrupt data */ }
+    })();
+
+    // ─────────────────────────────────────────────────────────
+    // UTILITY: rgbToHex
+    // getComputedStyle returns "rgb(r, g, b)" strings.
+    // The colour picker needs "#rrggbb". This converts between them.
+    // If the value is already a hex string, it's returned as-is.
+    // ─────────────────────────────────────────────────────────
+    function rgbToHex(str) {
+      if (!str || str.startsWith('#')) return str || '#888888';
+      const m = str.match(/\d+/g);
+      if (!m || m.length < 3) return '#888888';
+      return '#' + m.slice(0,3).map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
+    }
+
+
+    // ═════════════════════════════════════════════
+    // INITIAL RENDER
+    // ═════════════════════════════════════════════
+    showHome();
+
+  </script>
+</body>
+</html>
