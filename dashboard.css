@@ -1012,3 +1012,446 @@ body {
 .nb-writer-statusbar { display: flex; align-items: center; gap: 1rem; padding: 0.28rem 10%; border-top: 1px solid var(--rule); background: var(--bg-card); font-size: 0.62rem; color: var(--ink-muted); flex-shrink: 0; letter-spacing: 0.03em; }
 .nb-writer-saved { color: var(--green); margin-left: auto; }
 .notes-section-head { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.4rem; }
+
+/* ═══════════════════════════════════════════════════
+   NOTES NOTEBOOK — Subject shelf, Topic folders,
+   Note stack, and Flashcard mode
+═══════════════════════════════════════════════════ */
+
+/* ── Level 1: Subject shelf ── */
+.nt-subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.2rem;
+  padding: 0.2rem;
+}
+
+.nt-subject-card {
+  border-radius: 10px;
+  border: 1px solid var(--rule);
+  overflow: hidden;
+  background: var(--bg-card);
+  transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+  cursor: pointer;
+}
+.nt-subject-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.13);
+  border-color: var(--nt-colour, var(--accent));
+}
+[data-theme="dark"] .nt-subject-card:hover {
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+}
+
+.nt-subject-cover {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+}
+.nt-subject-cover-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.nt-subject-cover-placeholder {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.nt-subject-cover-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 0.35rem 0.7rem;
+  display: flex; align-items: baseline; justify-content: space-between;
+  background: var(--nt-colour, var(--accent));
+}
+.nt-subject-cover-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: white;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nt-subject-cover-count {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.8);
+  white-space: nowrap;
+  margin-left: 0.4rem;
+}
+.nt-subject-meta {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.66rem;
+  color: var(--ink-muted);
+}
+.nt-subject-topics {
+  background: var(--bg-inset);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 0.1rem 0.5rem;
+}
+
+/* ── Level 2: Topic folders ── */
+.nt-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1.2rem;
+  padding: 0.2rem;
+}
+
+.nt-topic-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+.nt-topic-card:hover {
+  background: var(--bg-inset);
+  border-color: var(--rule);
+  transform: translateY(-2px);
+}
+
+/* Folder shape */
+.nt-topic-folder {
+  position: relative;
+  width: 120px;
+  flex-shrink: 0;
+}
+.nt-topic-folder-tab {
+  width: 48px;
+  height: 10px;
+  border-radius: 4px 12px 0 0;
+  margin-left: 6px;
+  position: relative;
+  z-index: 1;
+}
+.nt-topic-folder-body {
+  width: 100%;
+  height: 90px;
+  border-radius: 0 8px 8px 8px;
+  border: 1.5px solid;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Thumbnail grid inside folder face */
+.nt-topic-thumbs {
+  width: 100%; height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 1px;
+  background: rgba(0,0,0,0.06);
+}
+.nt-topic-thumbs-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none !important;
+}
+.nt-topic-thumb {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.nt-topic-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: center;
+  max-width: 130px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nt-topic-count {
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+}
+
+/* ── Level 3: Note stack ── */
+.nt-stack-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  background: var(--bg);
+}
+.nt-stack-scroll::-webkit-scrollbar { width: 5px; }
+.nt-stack-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+.nt-stack-card {
+  width: 100%;
+  max-width: 700px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.1);
+  transition: box-shadow 0.18s;
+}
+.nt-stack-card:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.16); }
+[data-theme="dark"] .nt-stack-card { box-shadow: 0 3px 14px rgba(0,0,0,0.4); }
+
+.nt-stack-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg-inset);
+}
+.nt-stack-num {
+  font-size: 0.62rem;
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+.nt-stack-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink-light);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1;
+}
+.nt-stack-img-wrap { line-height: 0; }
+.nt-stack-img {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+.nt-stack-pdf-preview {
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* ── Flashcard mode ── */
+.nt-flashcard-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: var(--bg);
+}
+.nt-flashcard-scroll::-webkit-scrollbar { width: 4px; }
+.nt-flashcard-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+.nt-fc-card {
+  width: 100%;
+  max-width: 760px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--accent);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+[data-theme="dark"] .nt-fc-card { box-shadow: 0 4px 20px rgba(0,0,0,0.45); }
+
+.nt-fc-label {
+  padding: 0.45rem 1rem;
+  font-size: 0.65rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg-inset);
+}
+.nt-fc-img {
+  width: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* ═══════════════════════════════════════════════════
+   NOTES NOTEBOOK — Updated stack & writer styles
+═══════════════════════════════════════════════════ */
+
+/* ── Borderless stack cards ── */
+.nt-stack-card {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  width: 100%;
+  max-width: 720px;
+}
+.nt-stack-card:hover { box-shadow: none !important; }
+
+/* Thin floating label above each image (no box, no border) */
+.nt-stack-img-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.3rem 0.4rem;
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.03em;
+}
+
+/* Clean action buttons — no border boxes */
+.nt-img-action-btn {
+  background: none;
+  border: none;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  transition: color 0.12s, background 0.12s;
+}
+.nt-img-action-btn:hover { color: var(--accent); background: var(--bg-inset); }
+.nt-img-action-btn.nt-del:hover { color: #e05050; background: rgba(224,80,80,0.07); }
+
+/* The image itself — full width, no border */
+.nt-stack-img {
+  width: 100%;
+  display: block;
+  border-radius: 6px;
+  object-fit: contain;
+  background: var(--bg-card);
+}
+
+/* Gap between stacked items */
+.nt-stack-scroll {
+  gap: 2.8rem;
+  padding: 1.8rem 2rem;
+}
+
+/* Empty state */
+.nt-empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--ink-muted);
+}
+
+/* ── Written note card (inline document style) ── */
+.nt-written-card {
+  background: var(--bg-card);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+}
+
+.nt-written-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 1rem;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--rule);
+}
+.nt-written-icon  { font-size: 1rem; flex-shrink: 0; }
+.nt-written-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nt-written-date  { font-size: 0.62rem; color: var(--ink-muted); white-space: nowrap; }
+.nt-written-edit-btn {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  font-size: 0.68rem;
+  color: var(--ink-muted);
+  padding: 0.15rem 0.55rem;
+  font-family: 'Source Serif 4', serif;
+  transition: all 0.12s;
+}
+.nt-written-edit-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nt-written-del-btn {
+  background: none; border: none;
+  font-size: 0.8rem; color: var(--ink-muted);
+  padding: 0.15rem 0.3rem;
+  transition: color 0.12s;
+}
+.nt-written-del-btn:hover { color: #e05050; }
+
+/* Written note body — rendered like the writer editor but read-like */
+.nt-written-body {
+  padding: 1.4rem 1.6rem;
+  min-height: 60px;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 14.5px;
+  line-height: 1.75;
+  color: var(--ink);
+  outline: none;
+}
+
+/* ── In-note writer toolbar ── */
+.nt-writer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-wrap: wrap;
+  padding: 0.35rem 1.2rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--bg-card);
+  flex-shrink: 0;
+}
+
+/* ── Writer title input ── */
+.nt-writer-title-inp {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  padding: 0.6rem 0 0.5rem;
+  caret-color: var(--accent);
+}
+.nt-writer-title-inp::placeholder { color: var(--ink-muted); font-style: italic; }
+
+/* ── Writer body ── */
+.nt-writer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.6rem 10%;
+  background: var(--bg);
+}
+.nt-writer-body::-webkit-scrollbar { width: 4px; }
+.nt-writer-body::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+
+/* ── Writer editor (reuses nb-writer-editor styles already in CSS) ── */
+.nt-writer-editor {
+  min-height: 300px;
+  outline: none;
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.78;
+  color: var(--ink);
+  caret-color: var(--accent);
+}
+.nt-writer-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-muted);
+  pointer-events: none;
+  font-style: italic;
+}
+.nt-writer-editor h1 { font-family: 'Playfair Display', serif; font-size: 1.7rem; font-weight: 700; margin: 1.2rem 0 0.5rem; color: var(--ink); line-height: 1.25; }
+.nt-writer-editor h2 { font-family: 'Playfair Display', serif; font-size: 1.28rem; font-weight: 600; margin: 1rem 0 0.4rem; color: var(--ink); }
+.nt-writer-editor h3 { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 600; margin: 0.8rem 0 0.3rem; color: var(--secondary); }
+.nt-writer-editor p  { margin: 0 0 0.7rem; }
+.nt-writer-editor ul, .nt-writer-editor ol { padding-left: 1.4rem; margin: 0 0 0.7rem; }
+.nt-writer-editor li { margin-bottom: 0.2rem; }
+.nt-writer-editor blockquote { border-left: 3px solid var(--accent); padding-left: 1rem; color: var(--ink-light); font-style: italic; margin: 0.8rem 0; }
+.nt-writer-editor hr { border: none; border-top: 1px solid var(--rule); margin: 1.4rem 0; }
+.nt-writer-editor a  { color: var(--secondary); text-decoration: underline; }
+.nt-writer-editor [data-callout] { padding: 0.7rem 0.9rem; border-radius: 5px; margin: 0.8rem 0; border-left: 3px solid; font-size: 0.88em; }
+.nt-writer-editor [data-callout="info"]    { background: rgba(83,158,196,0.08);  border-color: var(--accent); }
+.nt-writer-editor [data-callout="warning"] { background: rgba(232,160,48,0.08);  border-color: #e8a030; }
+.nt-writer-editor [data-callout="success"] { background: rgba(58,171,110,0.08);  border-color: var(--green); }
