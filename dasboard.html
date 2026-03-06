@@ -862,34 +862,65 @@
     /* Change r="80" in the SVG + CIRCUM in JS if you resize */
     .pom-ring { position: relative; width: 180px; height: 180px; }
     .pom-ring svg { width: 180px; height: 180px; transform: rotate(-90deg); }
-    .pom-ring circle { fill: none; stroke-width: 12; stroke-linecap: round; }
-    .pom-ring .bg { stroke: var(--rule); }
+
+    /* All circles default to no fill, no stroke */
+    .pom-ring circle { fill: none; stroke: none; stroke-linecap: round; }
+
+    /* Inner fill circle — sits behind the text, matches the page bg */
+    .pom-ring .ring-fill {
+      fill: var(--bg);
+      stroke: none;
+      /* No transition needed — just a solid background */
+    }
+
+    /* Track ring */
+    .pom-ring .bg {
+      stroke: var(--rule);
+      stroke-width: 10;
+    }
+
+    /* Progress arc */
     .pom-ring .progress {
       stroke: var(--accent);
-      stroke-dasharray: 502.65;    /* 2π × 80 — update if r changes */
+      stroke-width: 10;
+      stroke-dasharray: 502.65;   /* 2π × 80 — update if r changes */
       stroke-dashoffset: 0;
       transition: stroke-dashoffset 0.5s linear;
-      filter: drop-shadow(0 0 6px rgba(83,158,196,0.45));
+      filter: drop-shadow(0 0 5px rgba(83,158,196,0.35));
     }
-    [data-theme="dark"] .pom-ring .progress { filter: drop-shadow(0 0 8px rgba(59,158,255,0.7)); }
+    [data-theme="dark"] .pom-ring .progress {
+      filter: drop-shadow(0 0 7px rgba(59,158,255,0.6));
+    }
 
+    /* Time text — centred over the ring, no background needed
+       because ring-fill gives it a clean surface to sit on  */
     .pom-time {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%,-50%);
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -52%);  /* slight upward nudge to optically centre with label */
       font-family: 'Playfair Display', serif;
-      font-size: 2.1rem; font-weight: 700;
+      font-size: 2.1rem;
+      font-weight: 700;
       color: var(--secondary);
       text-align: center;
       line-height: 1;
+      /* No border, no background, no box-shadow */
+      background: none;
+      border: none;
+      outline: none;
     }
-    [data-theme="dark"] .pom-time { color: #00d0f0; text-shadow: 0 0 14px rgba(0,208,240,0.4); }
+    [data-theme="dark"] .pom-time {
+      color: #00d0f0;
+      text-shadow: 0 0 12px rgba(0,208,240,0.35);
+    }
 
-    /* Session duration label inside the ring below the time */
+    /* "focus" / "break" label below the time, inside the ring */
     .pom-ring-label {
-      position: absolute; top: 62%; left: 50%;
+      position: absolute;
+      top: 60%; left: 50%;
       transform: translate(-50%, 0);
-      font-size: 0.58rem;
-      letter-spacing: 0.08em;
+      font-size: 0.56rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--ink-muted);
       white-space: nowrap;
@@ -1328,6 +1359,126 @@
 
 
     /* ═══════════════════════════════════════════════════
+       DASHBOARD SECTIONS
+       Two labelled sections on the home view:
+         Quick Access (tool folders) and Subjects (subject folders)
+       ─────────────────────────────────────────────────
+       --dash-section-gap: space between the two sections
+    ═══════════════════════════════════════════════════ */
+    .dash-section {
+      margin-bottom: 1.8rem;
+    }
+
+    .dash-section-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.64rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 0.9rem;
+    }
+
+    .dash-section-icon { font-size: 0.78rem; }
+
+    .dash-section-count {
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      font-size: 0.58rem;
+      padding: 0.08rem 0.4rem;
+      color: var(--ink-muted);
+      letter-spacing: 0;
+    }
+
+    /* "+ Add Subject" pill in section heading */
+    .dash-section-add {
+      margin-left: auto;
+      padding: 0.18rem 0.6rem;
+      border-radius: 3px;
+      border: 1px dashed var(--accent);
+      font-size: 0.64rem;
+      font-family: 'Source Serif 4', serif;
+      color: var(--accent);
+      background: transparent;
+      letter-spacing: 0.02em;
+      transition: all 0.15s;
+    }
+    .dash-section-add:hover { background: var(--accent); color: white; }
+
+    /* ═══════════════════════════════════════════════════
+       REVISION NOTES
+       Each note is a row with thumbnail + meta + actions.
+    ═══════════════════════════════════════════════════ */
+    .rev-note-row {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      background: var(--bg-card);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .rev-note-row:hover { border-color: var(--accent); background: var(--bg-inset); }
+
+    /* Thumbnail / type badge */
+    .rev-note-thumb {
+      width: 38px; height: 38px;
+      border-radius: 4px;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1px solid var(--rule);
+    }
+    .rev-note-type-badge {
+      width: 38px; height: 38px;
+      border-radius: 4px;
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .rev-note-meta { flex: 1; min-width: 0; }
+    .rev-note-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .rev-note-tags {
+      display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.2rem;
+    }
+    .rev-note-tag {
+      font-size: 0.6rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 8px;
+      border: 1px solid var(--rule);
+      color: var(--ink-muted);
+      background: var(--bg-inset);
+      white-space: nowrap;
+    }
+    .rev-note-tag.subject { border-color: var(--accent); color: var(--accent); }
+    .rev-note-tag.category { border-color: var(--secondary); color: var(--secondary); }
+    [data-theme="dark"] .rev-note-tag.category { border-color: var(--primary); color: var(--primary); }
+
+    .rev-note-date { font-size: 0.62rem; color: var(--ink-muted); margin-top: 0.1rem; }
+
+    .rev-note-actions { display: flex; gap: 0.3rem; flex-shrink: 0; }
+    .rev-note-btn {
+      background: none; border: 1px solid var(--rule);
+      border-radius: 3px; padding: 0.2rem 0.45rem;
+      font-size: 0.68rem; color: var(--ink-muted);
+      transition: all 0.12s;
+    }
+    .rev-note-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .rev-note-btn.del:hover { border-color: #e05050; color: #e05050; }
+
+    /* ═══════════════════════════════════════════════════
        SUBJECT OVERVIEW PANEL
        Data card grid shown when a subject is opened.
     ═══════════════════════════════════════════════════ */
@@ -1564,9 +1715,45 @@
       <!-- ── SCROLLABLE FILE AREA ── -->
       <div class="content-scroll" id="contentScroll">
 
-        <!-- HOME — folder grid lives here -->
+        <!-- ═══════════════════════════════════════════════════
+             HOME VIEW — split into two sections like a real file explorer
+             Section A: Quick Access — the 5 tool folders (fixed)
+             Section B: Subjects     — one folder per subject (dynamic)
+                        Each subject folder opens into its subject panel
+             ─────────────────────────────────────────────────────────
+             To change section heading style: edit .dash-section-heading
+             To change the subject folder colour default: edit SUBJ_DEFAULT_COLOUR in JS
+        ═══════════════════════════════════════════════════ -->
         <div id="homeView">
-          <div class="folder-grid" id="folderGrid"></div>
+
+          <!-- SECTION A: Quick Access -->
+          <div class="dash-section">
+            <div class="dash-section-heading">
+              <span class="dash-section-icon">⚡</span> Quick Access
+              <span class="dash-section-count" id="qaCount"></span>
+            </div>
+            <!-- Tool folders rendered here -->
+            <div class="folder-grid" id="folderGrid"></div>
+          </div>
+
+          <!-- SECTION B: Subjects -->
+          <div class="dash-section">
+            <div class="dash-section-heading">
+              <span class="dash-section-icon">📚</span> Subjects
+              <span class="dash-section-count" id="subjCount"></span>
+              <!-- Add subject directly from dashboard -->
+              <button class="dash-section-add" onclick="openAddSubjectSidebar()"
+                      title="Add subject">＋ Add Subject</button>
+            </div>
+            <!-- Subject folders rendered here -->
+            <div class="folder-grid" id="subjectFolderGrid"></div>
+            <!-- Empty state -->
+            <div id="subjectFolderEmpty"
+                 style="display:none;font-size:0.8rem;color:var(--ink-muted);font-style:italic;padding:0.8rem 0.2rem">
+              No subjects yet — click ＋ Add Subject to get started
+            </div>
+          </div>
+
         </div>
 
 
@@ -1643,7 +1830,9 @@
                 <!-- SVG ring — r="80", CIRCUM = 2π×80 ≈ 502.65 in JS -->
                 <div class="pom-ring" id="pomRing">
                   <svg viewBox="0 0 180 180">
-                    <circle class="bg" cx="90" cy="90" r="80"/>
+                    <!-- Solid fill behind the text so nothing bleeds through -->
+                    <circle class="ring-fill" cx="90" cy="90" r="73"/>
+                    <circle class="bg"       cx="90" cy="90" r="80"/>
                     <circle class="progress" cx="90" cy="90" r="80"/>
                   </svg>
                   <div class="pom-time" id="pomDisplay">25:00</div>
@@ -1749,27 +1938,88 @@
         </div>
 
         <!-- REVISION PUBLISHER -->
+        <!-- ═══════════════════════════════════════════════════
+             REVISION PANEL
+             Notes are tagged to a subject when uploaded.
+             All notes live in revisionNotes[] array (JS).
+             Each note: { id, name, type, data, subject, category, date }
+             ─────────────────────────────────────────────────────────
+             Notes auto-appear in the matching subject panel.
+             Categories are user-defined (e.g. "Flashcards", "Essays").
+        ═══════════════════════════════════════════════════ -->
         <div class="tool-panel" id="panel-revision">
           <div class="tp-header">
             <span style="font-size:1.3rem">📘</span>
-            <div><div class="tp-title">Smart Revision Publisher</div><div class="tp-sub">Turn notes into structured revision books</div></div>
-          </div>
-          <div class="tp-body">
-            <div style="max-width:500px;display:flex;flex-direction:column;gap:1rem">
-              <div class="img-upload-zone" onclick="document.getElementById('noteUpload').click()"
-                   onmouseenter="this.style.borderColor='var(--accent)'"
-                   onmouseleave="this.style.borderColor=''">
-                <div class="upload-icon">📸</div>
-                <div>Tap to upload photos of your handwritten notes</div>
-                <input type="file" id="noteUpload" multiple accept="image/*" hidden />
-              </div>
-              <div class="rev-feature-grid">
-                <div class="rev-feature"><div class="rev-feature-icon">📖</div><div class="rev-feature-name">Auto Chapters</div><div class="rev-feature-desc">Structured from your notes</div></div>
-                <div class="rev-feature"><div class="rev-feature-icon">📱</div><div class="rev-feature-name">QR Codes</div><div class="rev-feature-desc">Links to resources</div></div>
-                <div class="rev-feature"><div class="rev-feature-icon">📄</div><div class="rev-feature-name">PDF Export</div><div class="rev-feature-desc">Print-ready booklet</div></div>
-              </div>
-              <button class="t-btn primary" id="generateBtn" style="padding:0.7rem;font-size:0.86rem">📘 Generate Smart Book</button>
+            <div>
+              <div class="tp-title">Revision Notes</div>
+              <div class="tp-sub">Upload and organise notes by subject</div>
             </div>
+          </div>
+          <div class="tp-body" style="display:flex;flex-direction:column;gap:1.2rem">
+
+            <!-- Upload row -->
+            <div style="display:flex;gap:0.8rem;flex-wrap:wrap;align-items:flex-end">
+
+              <!-- Subject picker for this upload -->
+              <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:140px">
+                <label style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted)">Subject</label>
+                <select id="revSubjectPicker" class="t-input"
+                        style="height:34px;font-size:0.82rem;padding:0.3rem 0.5rem">
+                  <option value="">— None / General —</option>
+                  <!-- Populated by renderRevSubjectPicker() -->
+                </select>
+              </div>
+
+              <!-- Category input (free text, e.g. "Flashcards") -->
+              <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:130px">
+                <label style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted)">Category</label>
+                <input type="text" id="revCategoryInput" class="t-input"
+                       placeholder="e.g. Flashcards, Essays…"
+                       style="height:34px;font-size:0.82rem;padding:0.3rem 0.6rem" />
+              </div>
+
+              <!-- Note title (optional) -->
+              <div style="display:flex;flex-direction:column;gap:0.3rem;flex:1;min-width:130px">
+                <label style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted)">Note title</label>
+                <input type="text" id="revTitleInput" class="t-input"
+                       placeholder="Optional title…"
+                       style="height:34px;font-size:0.82rem;padding:0.3rem 0.6rem" />
+              </div>
+
+            </div>
+
+            <!-- Upload zone -->
+            <div class="img-upload-zone" id="revUploadZone"
+                 onclick="document.getElementById('noteUpload').click()"
+                 onmouseenter="this.style.borderColor='var(--accent)'"
+                 onmouseleave="this.style.borderColor=''">
+              <div class="upload-icon">📸</div>
+              <div>Click to upload note images or PDFs</div>
+              <div style="font-size:0.66rem;color:var(--ink-muted);margin-top:0.2rem">
+                Images, PDFs accepted · tagged to selected subject &amp; category
+              </div>
+              <input type="file" id="noteUpload" multiple accept="image/*,.pdf" hidden />
+            </div>
+
+            <!-- All notes list with filter bar -->
+            <div>
+              <!-- Filter row -->
+              <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.7rem;flex-wrap:wrap">
+                <div style="font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin-right:0.3rem">Filter:</div>
+                <select id="revFilterSubject" class="t-input"
+                        style="height:26px;font-size:0.74rem;padding:0 0.4rem;width:auto">
+                  <option value="">All subjects</option>
+                </select>
+                <select id="revFilterCategory" class="t-input"
+                        style="height:26px;font-size:0.74rem;padding:0 0.4rem;width:auto">
+                  <option value="">All categories</option>
+                </select>
+                <span id="revNoteCount" style="font-size:0.7rem;color:var(--ink-muted);margin-left:auto"></span>
+              </div>
+              <!-- Notes grid -->
+              <div id="revNotesList" style="display:flex;flex-direction:column;gap:0.4rem"></div>
+            </div>
+
           </div>
         </div>
 
@@ -1988,9 +2238,10 @@
       { id:3, name:'Grades',    emoji:'📊',  colour:'#3aab6e', panel:'grades',   image: null },
       { id:4, name:'Calendar',  emoji:'📅',  colour:'#e8a030', panel:'calendar', image: null },
       { id:5, name:'Revision',  emoji:'📘',  colour:'#9b6fd4', panel:'revision', image: null },
+      { id:6, name:'Notes',  emoji:'🍈',  colour:'#e05050', panel:'notes', image: null },
     ];
 
-    let nextId = 6;
+    let nextId = 7;
 
 
     // ═════════════════════════════════════════════
@@ -2032,60 +2283,202 @@
     }
 
 
-    // ═════════════════════════════════════════════
-    // RENDER FOLDERS
-    // Re-renders the grid whenever state changes.
-    // ═════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════
+    // RENDER FOLDERS (Quick Access section)
+    // Only renders the tool folders (not subjects).
+    // Subjects get their own renderSubjectFolders() below.
+    // ═════════════════════════════════════════════════════════
     function renderFolders() {
       const grid  = document.getElementById('folderGrid');
       const query = document.getElementById('searchInput').value.toLowerCase();
-      /* Filter by search query */
       const shown = folders.filter(f => f.name.toLowerCase().includes(query));
 
       grid.className = viewMode === 'list' ? 'folder-grid list-view' : 'folder-grid';
       grid.innerHTML = '';
 
-      shown.forEach(f => {
-        const div = document.createElement('div');
-        div.className = 'folder-item' + (selectedId === f.id ? ' selected' : '') + (f.image ? ' has-image' : '');
-        div.dataset.id = f.id;
+      shown.forEach(f => buildFolderEl(f, grid, false));
 
-        div.innerHTML = `
-          <div class="folder-icon-wrap">
-            ${folderSVG(f.colour)}
-            <!-- Custom image cover — shown if f.image is set -->
-            <img class="folder-img-cover" src="${f.image || ''}" alt="" />
-            <!-- Emoji — hidden when image is present (CSS .has-image) -->
-            <div class="folder-emoji">${f.emoji}</div>
-          </div>
-          <div class="folder-name">${f.name}</div>
-        `;
+      // Update count badge
+      const el = document.getElementById('qaCount');
+      if (el) el.textContent = shown.length;
 
-        /* Single click = select */
-        div.addEventListener('click', e => { e.stopPropagation(); selectFolder(f.id); });
+      const total = shown.length + pomSubjects.length;
+      document.getElementById('viewLabel').textContent = `${total} item${total !== 1 ? 's' : ''}`;
+      document.getElementById('statusMsg').textContent = `${total} item${total !== 1 ? 's' : ''}`;
 
-        /* Double click = open */
-        div.addEventListener('dblclick', e => { e.stopPropagation(); openFolder(f.id); });
+      // Also refresh subject folders so both sections stay in sync
+      renderSubjectFolders();
+    }
 
-        /* Right click = context menu */
-        div.addEventListener('contextmenu', e => { e.preventDefault(); showCtx(e, f.id); });
+    // ═════════════════════════════════════════════════════════
+    // RENDER SUBJECT FOLDERS (Subjects section on dashboard)
+    // One folder per entry in pomSubjects[].
+    // Double-clicking opens the subject's overview panel.
+    // Colour and emoji are taken from the subject's folder
+    // customisation (stored in subjFolderMeta map).
+    // ═════════════════════════════════════════════════════════
 
-        /* Touch double-tap */
-        let lastTap = 0;
-        div.addEventListener('touchend', e => {
-          const now = Date.now();
-          if (now - lastTap < 350) { e.preventDefault(); openFolder(f.id); }
-          else selectFolder(f.id);
-          lastTap = now;
+    // Per-subject folder customisation — keyed by subject id.
+    // Stores { colour, emoji, image } overrides set via right-click.
+    // Default colour cycles through SUBJ_FOLDER_COLOURS.
+    const subjFolderMeta = {};
+
+    // Default colours for subject folders (cycles)
+    const SUBJ_FOLDER_COLOURS = [
+      '#539ec4','#3aab6e','#e8a030','#9b6fd4','#e067a0',
+      '#5bc8ac','#e05050','#A9DEF9','#ffe066','#2a8bbc'
+    ];
+
+    function getSubjMeta(s) {
+      if (!subjFolderMeta[s.id]) {
+        const i = pomSubjects.indexOf(s);
+        subjFolderMeta[s.id] = {
+          colour: SUBJ_FOLDER_COLOURS[i % SUBJ_FOLDER_COLOURS.length],
+          emoji:  SUBJ_EMOJIS[i % SUBJ_EMOJIS.length],
+          image:  null
+        };
+      }
+      return subjFolderMeta[s.id];
+    }
+
+    function renderSubjectFolders() {
+      const grid  = document.getElementById('subjectFolderGrid');
+      const empty = document.getElementById('subjectFolderEmpty');
+      const query = (document.getElementById('searchInput').value || '').toLowerCase();
+      if (!grid) return;
+
+      const shown = pomSubjects.filter(s => s.name.toLowerCase().includes(query));
+      grid.className = viewMode === 'list' ? 'folder-grid list-view' : 'folder-grid';
+      grid.innerHTML = '';
+
+      if (shown.length === 0) {
+        empty.style.display = '';
+      } else {
+        empty.style.display = 'none';
+        shown.forEach(s => {
+          const meta = getSubjMeta(s);
+          // Build a fake folder-like object for buildFolderEl
+          const fakeFolder = {
+            id:     'subj_' + s.id,
+            name:   s.name,
+            emoji:  meta.emoji,
+            colour: meta.colour,
+            image:  meta.image,
+            _subjId: s.id        // marker so we know it's a subject folder
+          };
+          buildFolderEl(fakeFolder, grid, true);
         });
+      }
 
-        grid.appendChild(div);
+      const el = document.getElementById('subjCount');
+      if (el) el.textContent = pomSubjects.length;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // buildFolderEl — shared factory for tool and subject folders
+    // isSubject=true → double-click opens subject panel
+    // isSubject=false → double-click opens tool panel
+    // ─────────────────────────────────────────────────────────
+    function buildFolderEl(f, grid, isSubject) {
+      const div = document.createElement('div');
+      div.className = 'folder-item'
+        + (selectedId === f.id ? ' selected' : '')
+        + (f.image ? ' has-image' : '');
+      div.dataset.id = f.id;
+
+      div.innerHTML = `
+        <div class="folder-icon-wrap">
+          ${folderSVG(f.colour)}
+          <img class="folder-img-cover" src="${f.image || ''}" alt="" />
+          <div class="folder-emoji">${f.emoji}</div>
+        </div>
+        <div class="folder-name">${f.name}</div>
+      `;
+
+      div.addEventListener('click', e => { e.stopPropagation(); selectFolder(f.id); });
+
+      div.addEventListener('dblclick', e => {
+        e.stopPropagation();
+        if (isSubject) openSubjectPanel(f._subjId);
+        else openFolder(f.id);
       });
 
-      /* Update status counts */
-      const label = `${shown.length} item${shown.length !== 1 ? 's' : ''}`;
-      document.getElementById('viewLabel').textContent  = label;
-      document.getElementById('statusMsg').textContent  = label;
+      div.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        if (isSubject) showSubjCtx(e, f._subjId);
+        else showCtx(e, f.id);
+      });
+
+      let lastTap = 0;
+      div.addEventListener('touchend', e => {
+        const now = Date.now();
+        if (now - lastTap < 350) {
+          e.preventDefault();
+          if (isSubject) openSubjectPanel(f._subjId);
+          else openFolder(f.id);
+        } else selectFolder(f.id);
+        lastTap = now;
+      });
+
+      grid.appendChild(div);
+    }
+
+    // ── Subject folder right-click context menu ──
+    let ctxSubjTarget = null;
+
+    function showSubjCtx(e, subjId) {
+      ctxSubjTarget = subjId;
+      const subj = pomSubjects.find(s => s.id === subjId);
+      if (!subj) return;
+      selectedId = 'subj_' + subjId;
+      renderSubjectFolders();
+      ctxMenu.innerHTML = `
+        <div class="ctx-item" onclick="openSubjectPanel(${subjId})">📂 Open</div>
+        <div class="ctx-item" onclick="openSubjFolderCustomise(${subjId})">🎨 Customise Folder</div>
+        <div class="ctx-sep"></div>
+        <div class="ctx-item" onclick="ctxRenameSubj(${subjId})">✏️ Rename</div>
+        <div class="ctx-item ctx-danger" onclick="ctxDeleteSubj(${subjId})">🗑️ Delete Subject</div>
+      `;
+      ctxMenu.style.left = e.clientX + 'px';
+      ctxMenu.style.top  = e.clientY + 'px';
+      ctxMenu.classList.add('open');
+    }
+
+    function ctxRenameSubj(id) {
+      hideCtx();
+      const s = pomSubjects.find(x => x.id === id);
+      if (!s) return;
+      const n = prompt('Rename subject:', s.name);
+      if (n && n.trim()) { s.name = n.trim(); renderSbSubjects(); renderSubjectFolders(); }
+    }
+
+    function ctxDeleteSubj(id) {
+      hideCtx();
+      const s = pomSubjects.find(x => x.id === id);
+      if (!s || !confirm(`Delete "${s.name}" and all its data?`)) return;
+      pomSubjects = pomSubjects.filter(x => x.id !== id);
+      delete subjFolderMeta[id];
+      if (currentSubjectId === id) { currentSubjectId = null; showHome(); }
+      if (pomActiveId === id) { pomActiveId = null; updatePomBadge(); renderPomTabs(); }
+      renderSbSubjects(); renderSubjectFolders(); renderPomStats();
+      renderRevSubjectPicker();
+    }
+
+    // Customise subject folder (colour / emoji / image)
+    function openSubjFolderCustomise(id) {
+      hideCtx();
+      const meta = getSubjMeta(pomSubjects.find(s => s.id === id));
+      pickerId      = 'subj_' + id; // special marker
+      pickerEmoji   = meta.emoji;
+      pickerColour  = meta.colour;
+      pickerImage   = meta.image;
+      const subj = pomSubjects.find(s => s.id === id);
+      document.getElementById('modalTitle').textContent     = `Customise "${subj?.name}" Folder`;
+      document.getElementById('folderNameInput').value      = subj?.name || '';
+      document.getElementById('hexInput').value             = meta.colour;
+      document.getElementById('hexPreviewDot').style.background = meta.colour;
+      // Render emoji + colour grids (reuse existing modal logic)
+      openCustomise('subj_' + id);
     }
 
 
@@ -2100,7 +2493,7 @@
       // Show content-scroll + view-bar again
       document.querySelector('.main-area').classList.remove('panel-active');
       setActiveSb('home');
-      renderFolders();
+      renderFolders();          // renders Quick Access + calls renderSubjectFolders
     }
 
     function openFolder(id) {
@@ -2334,16 +2727,30 @@
 
     function applyCustomise() {
       const name = document.getElementById('folderNameInput').value.trim() || 'New Folder';
-      if (pickerId) {
-        /* Edit existing folder */
+
+      if (typeof pickerId === 'string' && pickerId.startsWith('subj_')) {
+        // Subject folder customisation
+        const subjId = parseInt(pickerId.replace('subj_', ''));
+        const meta   = getSubjMeta(pomSubjects.find(s => s.id === subjId));
+        meta.emoji   = pickerEmoji;
+        meta.colour  = pickerColour;
+        meta.image   = pickerImage;
+        // Also rename subject
+        const subj = pomSubjects.find(s => s.id === subjId);
+        if (subj && name) subj.name = name;
+        renderSubjectFolders();
+        renderSbSubjects();
+      } else if (pickerId) {
+        // Tool folder edit
         const f = folders.find(x => x.id === pickerId);
         if (f) { f.name = name; f.emoji = pickerEmoji; f.colour = pickerColour; f.image = pickerImage; }
+        renderFolders();
       } else {
-        /* Create new folder — no panel assigned (decorative / future use) */
+        // New custom folder
         folders.push({ id: nextId++, name, emoji: pickerEmoji, colour: pickerColour, panel: 'home', image: pickerImage });
+        renderFolders();
       }
       closeModal();
-      renderFolders();
     }
 
     function closeModal() {
@@ -2548,6 +2955,7 @@
     let pomTimer       = null;
     let pomRunning     = false;
     let pomElapsed     = 0;           // seconds elapsed in current session
+    let pomLiveOffset  = 0;           // live in-progress seconds (cleared on session end/reset)
 
     // ── Helpers ──
     function pomFmt(t) {
@@ -2571,8 +2979,11 @@
     }
 
     // ── Grand totals across all subjects ──
+    // Includes pomLiveOffset so the bar counts up live while a session is running.
+    // pomLiveOffset is the seconds elapsed in the CURRENT session (not yet committed).
     function pomGrandTotal() {
-      return pomSubjects.reduce((sum, s) => sum + s.totalSec, 0);
+      const committed = pomSubjects.reduce((sum, s) => sum + s.totalSec, 0);
+      return committed + pomLiveOffset;
     }
 
     // ── Update the Yeolputa stats bar ──
@@ -2761,7 +3172,8 @@
     // ── Session complete: ask "what did you study?" ──
     function pomSessionComplete(elapsed) {
       clearInterval(pomTimer);
-      pomRunning = false;
+      pomRunning    = false;
+      pomLiveOffset = 0;   // clear live offset — totalSec gets the real value below
 
       const subj = pomSubjects.find(s => s.id === pomActiveId);
 
@@ -2810,6 +3222,22 @@ What did you study for ${subj.name}?
           pomTime--;
           pomElapsed++;
           pomUpdateRing();
+
+          // ── Live stats: add 1 second to the active subject's running total
+          //    so the Yeolputa bar counts up in real time.
+          //    We temporarily add pomElapsed to the subject's totalSec each tick
+          //    so pomGrandTotal() reflects current progress.
+          //    When the session ends, pomSessionComplete() does the final write.
+          const liveSubj = pomSubjects.find(s => s.id === pomActiveId);
+          if (liveSubj) {
+            // Increment by 1 each tick — the session completion will re-add
+            // the full elapsed block, so we store a "live offset" separately
+            // to avoid double-counting.  We track it on pomLiveOffset.
+            pomLiveOffset = pomElapsed;
+          }
+          // Always re-render stats so the bar moves every second
+          renderPomStats();
+
         } else {
           pomSessionComplete(pomElapsed);
         }
@@ -2819,10 +3247,12 @@ What did you study for ${subj.name}?
     // ── Reset button ──
     document.getElementById('pomReset').addEventListener('click', () => {
       clearInterval(pomTimer);
-      pomRunning  = false;
-      pomElapsed  = 0;
-      pomTime     = pomFull;
+      pomRunning    = false;
+      pomElapsed    = 0;
+      pomLiveOffset = 0;   // clear live offset so stats bar resets correctly
+      pomTime       = pomFull;
       pomUpdateRing();
+      renderPomStats();    // re-render stats after reset
     });
 
     // ── Skip button — marks session done immediately ──
@@ -2885,6 +3315,7 @@ What did you study for ${subj.name}?
     // ── Init ──
     pomUpdateRing();
     renderPomStats();
+    renderRevSubjectPicker();
 
 
     // ═════════════════════════════════════════════
@@ -3024,6 +3455,181 @@ What did you study for ${subj.name}?
 
 
     // ═════════════════════════════════════════════════════════
+    // REVISION NOTES SYSTEM
+    // ─────────────────────────────────────────────────────────
+    // revisionNotes = array of note objects:
+    // {
+    //   id:       number,
+    //   name:     string,      display title
+    //   type:     'image'|'pdf',
+    //   data:     string,      base64 data URL
+    //   subject:  string,      subject name ('' = general)
+    //   subjId:   number|null, pomSubjects id match
+    //   category: string,      free-text category e.g. 'Flashcards'
+    //   date:     string,      e.g. '5 Mar'
+    // }
+    // ═════════════════════════════════════════════════════════
+    let revisionNotes  = [];
+    let revNextNoteId  = 1;
+
+    // ── Populate subject picker dropdowns ──
+    function renderRevSubjectPicker() {
+      ['revSubjectPicker','revFilterSubject'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+        const val = sel.value; // preserve current selection
+        // Keep first option, remove the rest
+        while (sel.options.length > 1) sel.remove(1);
+        pomSubjects.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value       = s.name;
+          opt.textContent = s.name;
+          sel.appendChild(opt);
+        });
+        sel.value = val; // restore
+      });
+    }
+
+    // ── Populate category filter ──
+    function renderRevCategoryFilter() {
+      const sel = document.getElementById('revFilterCategory');
+      if (!sel) return;
+      const val = sel.value;
+      while (sel.options.length > 1) sel.remove(1);
+      const cats = [...new Set(revisionNotes.map(n => n.category).filter(Boolean))];
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        sel.appendChild(opt);
+      });
+      sel.value = val;
+    }
+
+    // ── Handle file uploads ──
+    document.getElementById('noteUpload').addEventListener('change', e => {
+      const files  = Array.from(e.target.files);
+      if (!files.length) return;
+
+      const subjName  = document.getElementById('revSubjectPicker').value;
+      const category  = document.getElementById('revCategoryInput').value.trim();
+      const titleBase = document.getElementById('revTitleInput').value.trim();
+
+      // Find matching subject id
+      const matchSubj = pomSubjects.find(s => s.name === subjName);
+
+      files.forEach((file, fi) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const isPDF = file.type === 'application/pdf';
+          revisionNotes.push({
+            id:       revNextNoteId++,
+            name:     titleBase || file.name.replace(/\.[^/.]+$/, ''),
+            type:     isPDF ? 'pdf' : 'image',
+            data:     ev.target.result,
+            subject:  subjName,
+            subjId:   matchSubj ? matchSubj.id : null,
+            category: category,
+            date:     todayStr()
+          });
+          // After last file, refresh UI
+          if (fi === files.length - 1) {
+            renderRevNotesList();
+            renderRevSubjectPicker();
+            renderRevCategoryFilter();
+            // Clear inputs
+            document.getElementById('revTitleInput').value    = '';
+            document.getElementById('revCategoryInput').value = '';
+            document.getElementById('noteUpload').value       = '';
+            // Refresh subject panel if open
+            if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // ── Render the notes list in the Revision panel ──
+    function renderRevNotesList() {
+      const container = document.getElementById('revNotesList');
+      if (!container) return;
+
+      const filterSubj = document.getElementById('revFilterSubject')?.value || '';
+      const filterCat  = document.getElementById('revFilterCategory')?.value || '';
+
+      const shown = revisionNotes.filter(n => {
+        if (filterSubj && n.subject !== filterSubj) return false;
+        if (filterCat  && n.category !== filterCat)  return false;
+        return true;
+      });
+
+      container.innerHTML = '';
+      const countEl = document.getElementById('revNoteCount');
+      if (countEl) countEl.textContent = `${shown.length} note${shown.length !== 1 ? 's' : ''}`;
+
+      if (shown.length === 0) {
+        container.innerHTML = '<div style="font-size:0.78rem;color:var(--ink-muted);font-style:italic;padding:0.5rem 0">No notes yet — upload above</div>';
+        return;
+      }
+
+      shown.forEach(n => {
+        const row = document.createElement('div');
+        row.className = 'rev-note-row';
+
+        // Thumbnail or badge
+        let thumbHTML;
+        if (n.type === 'image') {
+          thumbHTML = `<img class="rev-note-thumb" src="${n.data}" alt="${n.name}" />`;
+        } else {
+          thumbHTML = `<div class="rev-note-type-badge">📄</div>`;
+        }
+
+        // Tags
+        const subjTag = n.subject
+          ? `<span class="rev-note-tag subject">${n.subject}</span>` : '';
+        const catTag  = n.category
+          ? `<span class="rev-note-tag category">${n.category}</span>` : '';
+
+        row.innerHTML = `
+          ${thumbHTML}
+          <div class="rev-note-meta">
+            <div class="rev-note-title">${n.name}</div>
+            <div class="rev-note-tags">${subjTag}${catTag}</div>
+            <div class="rev-note-date">${n.date}</div>
+          </div>
+          <div class="rev-note-actions">
+            <button class="rev-note-btn" onclick="viewNote(${n.id})" title="View">👁</button>
+            <button class="rev-note-btn del" onclick="deleteNote(${n.id})" title="Delete">🗑</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // ── View note (open in new tab) ──
+    window.viewNote = function(id) {
+      const n = revisionNotes.find(x => x.id === id);
+      if (!n) return;
+      const win = window.open();
+      if (n.type === 'image') {
+        win.document.write(`<img src="${n.data}" style="max-width:100%;height:auto" />`);
+      } else {
+        win.document.write(`<iframe src="${n.data}" style="width:100%;height:100vh;border:none"></iframe>`);
+      }
+    };
+
+    // ── Delete note ──
+    window.deleteNote = function(id) {
+      revisionNotes = revisionNotes.filter(x => x.id !== id);
+      renderRevNotesList();
+      renderRevCategoryFilter();
+      if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+    };
+
+    // Wire filter dropdowns
+    document.getElementById('revFilterSubject')?.addEventListener('change',  renderRevNotesList);
+    document.getElementById('revFilterCategory')?.addEventListener('change', renderRevNotesList);
+
+    // ═════════════════════════════════════════════════════════
     // SIDEBAR SUBJECTS
     // ─────────────────────────────────────────────────────────
     // pomSubjects (defined in Pomodoro section) is the single
@@ -3107,6 +3713,8 @@ What did you study for ${subj.name}?
       // Also refresh the Pomodoro tab list
       renderPomTabs();
       renderSbSubjects();
+      renderRevSubjectPicker();
+      renderSubjectFolders();
       // Auto-open the new subject panel
       openSubjectPanel(newSubj.id);
     }
@@ -3334,7 +3942,75 @@ What did you study for ${subj.name}?
         }
       }
 
-      // ── 5. START SESSION button ───────────────────────────
+      // ── 5. REVISION NOTES for this subject ──────────────
+      const notesCard = makeCard('📘', 'Notes', true);
+      // Find notes matching this subject
+      const subjNotes = revisionNotes.filter(n => n.subjId === id || n.subject === subj.name);
+
+      if (subjNotes.length === 0) {
+        const emp = document.createElement('div');
+        emp.className = 'subj-empty';
+        emp.innerHTML = 'No notes yet — upload in Revision and tag this subject';
+        notesCard.appendChild(emp);
+      } else {
+        // Group by category
+        const cats = [...new Set(subjNotes.map(n => n.category || 'General'))];
+        cats.forEach(cat => {
+          const catNotes = subjNotes.filter(n => (n.category || 'General') === cat);
+
+          // Category heading
+          const catHead = document.createElement('div');
+          catHead.style.cssText = 'font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-muted);margin:0.6rem 0 0.3rem;padding-top:0.3rem;border-top:1px solid var(--rule)';
+          catHead.textContent = cat;
+          notesCard.appendChild(catHead);
+
+          // Notes grid for this category
+          const noteGrid = document.createElement('div');
+          noteGrid.style.cssText = 'display:flex;flex-wrap:wrap;gap:0.5rem';
+
+          catNotes.forEach(n => {
+            const tile = document.createElement('div');
+            tile.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:0.3rem;cursor:pointer';
+            tile.title = n.name;
+
+            // Thumbnail
+            let thumbEl;
+            if (n.type === 'image') {
+              thumbEl = document.createElement('img');
+              thumbEl.src = n.data;
+              thumbEl.style.cssText = 'width:56px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--rule)';
+            } else {
+              thumbEl = document.createElement('div');
+              thumbEl.style.cssText = 'width:56px;height:48px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background:var(--bg-inset);border-radius:4px;border:1px solid var(--rule)';
+              thumbEl.textContent = '📄';
+            }
+
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size:0.6rem;color:var(--ink-muted);max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center';
+            label.textContent = n.name;
+
+            tile.appendChild(thumbEl);
+            tile.appendChild(label);
+            tile.addEventListener('click', () => viewNote(n.id));
+            noteGrid.appendChild(tile);
+          });
+
+          notesCard.appendChild(noteGrid);
+        });
+      }
+
+      // Upload shortcut inside subject panel
+      const uploadShortcut = document.createElement('div');
+      uploadShortcut.style.cssText = 'display:flex;gap:0.4rem;margin-top:0.7rem;align-items:center';
+      uploadShortcut.innerHTML = `
+        <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.6rem"
+                onclick="quickUploadForSubject('${subj.name}')">
+          📎 Add Note to ${subj.name}
+        </button>
+      `;
+      notesCard.appendChild(uploadShortcut);
+
+      // ── 6. START SESSION button ───────────────────────────
       const startCard = makeCard('▶', 'Quick Start', false);
       startCard.innerHTML += `
         <div class="subj-empty" style="margin-bottom:0.5rem">
@@ -3346,6 +4022,24 @@ What did you study for ${subj.name}?
         </button>
       `;
     }
+
+    // ── Quick upload: navigate to Revision, pre-select this subject ──
+    window.quickUploadForSubject = function(subjName) {
+      // Pre-select the subject in the revision picker
+      const picker = document.getElementById('revSubjectPicker');
+      if (picker) picker.value = subjName;
+      // Navigate to revision panel
+      const f = folders.find(x => x.panel === 'revision');
+      if (f) openFolder(f.id);
+      else {
+        document.getElementById('homeView').style.display = 'none';
+        document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('visible'));
+        document.querySelector('.main-area').classList.add('panel-active');
+        document.getElementById('panel-revision').classList.add('visible');
+        document.getElementById('addressText').textContent = 'Tangent / Dashboard / Revision';
+        document.getElementById('pathLabel').textContent = 'Revision';
+      }
+    };
 
     // ── Quick-start: navigate to Pomodoro, select this subject ──
     function quickStartSubject(id) {
@@ -3403,6 +4097,7 @@ What did you study for ${subj.name}?
     // ═════════════════════════════════════════════
     showHome();
     renderSbSubjects();
+    renderRevSubjectPicker();
 
 
     // ═════════════════════════════════════════════════════════

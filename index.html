@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tangent — Study Smarter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink:        #d4e8f8;
+      --ink-light:  #8bb5d4;
+      --ink-muted:  #4a7190;
+      --bg:         #071624;
+      --bg-card:    #0c2035;
+      --bg-inset:   #091b2e;
+      --accent:     #3b9eff;
+      --accent-dark:#1a6fd4;
+      --cyan:       #00d0f0;
+      --rule:       #122840;
+      --green:      #00e080;
+      --bg-hero:    #050f1e;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 3rem;
+      height: 60px;
+      background: rgba(5, 14, 27, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .logo span { color: var(--cyan); }
+
+    .nav-center {
+      display: flex;
+      list-style: none;
+      gap: 2.5rem;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+    .nav-center li { cursor: pointer; transition: color 0.2s; }
+    .nav-center li:hover { color: var(--accent); }
+
+    .nav-right { display: flex; gap: 0.8rem; align-items: center; }
+
+    .btn-ghost {
+      padding: 0.42rem 1.1rem;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+      background: transparent;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--ink-light);
+      font-family: 'Source Serif 4', serif;
+      transition: all 0.15s;
+      letter-spacing: 0.03em;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-primary {
+      padding: 0.42rem 1.2rem;
+      border-radius: 4px;
+      border: none;
+      background: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      font-family: 'Source Serif 4', serif;
+      transition: all 0.2s;
+      letter-spacing: 0.03em;
+    }
+    .btn-primary:hover {
+      background: var(--accent-dark);
+      box-shadow: 0 4px 16px rgba(59,158,255,0.3);
+      transform: translateY(-1px);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      background: var(--bg-hero);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle grid background like Casio keypad grid */
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,158,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,158,255,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Glow blob */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(59,158,255,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(59,158,255,0.1);
+      border: 1px solid rgba(59,158,255,0.25);
+      border-radius: 999px;
+      padding: 0.3rem 1rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 2rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-badge-dot {
+      width: 6px; height: 6px;
+      background: var(--cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--cyan);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      max-width: 780px;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--ink-light);
+      max-width: 520px;
+      margin-bottom: 2.5rem;
+      position: relative;
+      z-index: 1;
+      font-style: italic;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-hero {
+      padding: 0.8rem 2rem;
+      border-radius: 5px;
+      font-family: 'Source Serif 4', serif;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-hero-filled {
+      background: var(--accent);
+      color: white;
+      border: none;
+      box-shadow: 0 0 30px rgba(59,158,255,0.25);
+    }
+    .btn-hero-filled:hover {
+      background: var(--accent-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(59,158,255,0.4);
+    }
+
+    .btn-hero-outline {
+      background: transparent;
+      color: var(--ink-light);
+      border: 1px solid var(--rule);
+    }
+    .btn-hero-outline:hover {
+      border-color: var(--ink-light);
+      color: var(--ink);
+    }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      background: #040f1c;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      padding: 1.8rem 3rem;
+      display: flex;
+      justify-content: center;
+      gap: 4rem;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+
+    /* ── SECTION ── */
+    .section {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 5rem 3rem;
+    }
+
+    .section-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 0.8rem;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      max-width: 600px;
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      color: var(--ink-muted);
+      font-size: 0.95rem;
+      max-width: 520px;
+      margin-bottom: 3rem;
+      font-style: italic;
+    }
+
+    /* ── FEATURE CARDS GRID ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.2rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      border-top: 2px solid transparent;
+      border-radius: 8px;
+      padding: 1.8rem;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+
+    .feature-card:hover {
+      border-top-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 0.88rem;
+      color: var(--ink-muted);
+      line-height: 1.6;
+    }
+
+    /* ── BIG FEATURE ROW ── */
+    .big-feature {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: center;
+      padding: 5rem 3rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .big-feature.reverse { direction: rtl; }
+    .big-feature.reverse > * { direction: ltr; }
+
+    .big-feature-text .section-label { margin-bottom: 0.6rem; }
+
+    .big-feature-text h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      line-height: 1.2;
+      margin-bottom: 1rem;
+    }
+
+    .big-feature-text p {
+      color: var(--ink-light);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.7;
+    }
+
+    .feature-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .feature-bullets li {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 0.88rem;
+      color: var(--ink-light);
+    }
+
+    .feature-bullets li::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(59,158,255,0.5);
+    }
+
+    /* ── MOCK DASHBOARD PREVIEW ── */
+    .preview-box {
+      background: var(--bg-inset);
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .preview-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--cyan));
+    }
+
+    .preview-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .preview-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+
+    .preview-mini-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+    }
+
+    .preview-mini-card {
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+
+    .preview-mini-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .preview-mini-val {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-shadow: 0 0 10px rgba(0,208,240,0.3);
+    }
+
+    /* ── SUBJECTS SECTION ── */
+    .subjects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.8rem;
+    }
+
+    .subject-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .subject-pill:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(59,158,255,0.15);
+      transform: translateY(-2px);
+    }
+
+    .subject-pill-icon { font-size: 1.5rem; display: block; margin-bottom: 0.4rem; }
+
+    .subject-pill-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--ink-light);
+      letter-spacing: 0.02em;
+    }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      background: #040f1c;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      text-align: center;
+      padding: 5rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px; height: 300px;
+      background: radial-gradient(ellipse, rgba(59,158,255,0.1), transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section p {
+      color: var(--ink-muted);
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      position: relative;
+      z-index: 1;
+      font-style: italic;
+    }
+
+    .cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #050e1b;
+      border-top: 1px solid var(--rule);
+      padding: 2.5rem 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    footer .logo { font-size: 1.1rem; }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+    .footer-links li { cursor: pointer; transition: color 0.2s; }
+    .footer-links li:hover { color: var(--ink-light); }
+
+    .footer-copy {
+      font-size: 0.75rem;
+      color: var(--ink-muted);
+    }
+
+    /* ── AUTH MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 12, 26, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      border-top: 2px solid var(--accent);
+      border-radius: 10px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.25s;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: none;
+      border: none;
+      color: var(--ink-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--ink); }
+
+    .modal h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 0.3rem;
+    }
+
+    .modal-sub {
+      font-size: 0.85rem;
+      color: var(--ink-muted);
+      margin-bottom: 1.8rem;
+      font-style: italic;
+    }
+
+    .modal-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 1.8rem;
+    }
+
+    .modal-tab {
+      flex: 1;
+      padding: 0.6rem;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s;
+      font-family: 'Source Serif 4', serif;
+      background: none;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+    }
+
+    .modal-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .modal-field {
+      margin-bottom: 1rem;
+    }
+
+    .modal-field label {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-field input {
+      width: 100%;
+      padding: 0.6rem 0.9rem;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+      background: var(--bg-inset);
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.9rem;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .modal-field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,158,255,0.1);
+    }
+
+    .modal-submit {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 4px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-family: 'Source Serif 4', serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+
+    .modal-submit:hover {
+      background: var(--accent-dark);
+      box-shadow: 0 4px 16px rgba(59,158,255,0.3);
+    }
+
+    /* ── ANIMATIONS ── */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .big-feature { grid-template-columns: 1fr; gap: 2rem; }
+      .big-feature.reverse { direction: ltr; }
+      .navbar { padding: 0 1.5rem; }
+      .nav-center { display: none; }
+      .section { padding: 3rem 1.5rem; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="logo" href="#">Tangent<span>.</span></a>
+    <ul class="nav-center">
+      <li>Features</li>
+      <li>Subjects</li>
+      <li>About</li>
+    </ul>
+    <div class="nav-right">
+      <button class="btn-ghost" onclick="openModal('login')">Log in</button>
+      <button class="btn-primary" onclick="openModal('signup')">Get started</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Free for all students
+      <button class ="btn-hero btn-hero-outline" onclick="window.location.href='dasboard.html'">Test Dashboard</button>
+      
+    </div>
+    <h1>The study dashboard<br>built for <em>exam season</em></h1>
+    <p class="hero-sub">Pomodoro timer, grade tracker, to-do list, and smart revision tools — all in one place.</p>
+    <div class="hero-ctas">
+      <button class="btn-hero btn-hero-filled" onclick="openModal('signup')">Start for free</button>
+      <button class="btn-hero btn-hero-outline" onclick="openModal('login')">I already have an account</button>
+    </div>
+  </section>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stat">
+      <span class="stat-num">A lot of</span>
+      <span class="stat-label">Active Students</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">98%</span>
+      <span class="stat-label">Would Recommend</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">5</span>
+      <span class="stat-label">Built-in Tools</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Free</span>
+      <span class="stat-label">Always</span>
+    </div>
+  </div>
+
+  <!-- FEATURES GRID -->
+  <section class="section">
+    <p class="section-label fade-up">What's inside</p>
+    <h2 class="section-title fade-up">Everything you need. Nothing you don't.</h2>
+    <p class="section-sub fade-up">Tangent keeps your study sessions focused, organised and measurable.</p>
+
+    <div class="features-grid">
+      <div class="feature-card fade-up">
+        <span class="feature-icon">⏱</span>
+        <h3>Pomodoro Timer</h3>
+        <p>25-minute focus sessions with a visual ring counter. Work in sprints, not marathons.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <span class="feature-icon">📝</span>
+        <h3>To-Do List</h3>
+        <p>Add, rename and clear tasks as you go. Keep today's work visible at all times.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <span class="feature-icon">📊</span>
+        <h3>Grade Tracker</h3>
+        <p>Log subject scores and watch your average. Know exactly where you need to improve.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <span class="feature-icon">📅</span>
+        <h3>Calendar</h3>
+        <p>Stay oriented through the term. Today is always highlighted so you never lose track.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <span class="feature-icon">📘</span>
+        <h3>Smart Revision Publisher</h3>
+        <p>Upload photos of your notes and generate a structured PDF revision book automatically.</p>
+      </div>
+      <div class="feature-card fade-up">
+        <span class="feature-icon">🕐</span>
+        <h3>Live Clock</h3>
+        <p>12H or 24H display always visible. Toggle with one click, just like switching your Casio.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIG FEATURE — Dashboard Preview -->
+  <div class="big-feature">
+    <div class="big-feature-text fade-up">
+      <p class="section-label">Your command centre</p>
+      <h2>A dashboard that actually fits your workflow</h2>
+      <p>Every tool lives in its own card. Double-tap any card to expand it full screen so you can focus without distraction.</p>
+      <ul class="feature-bullets">
+        <li>Double-tap any card to expand it</li>
+        <li>Dark mode built in — easy on exam-night eyes</li>
+        <li>Works on phone, tablet, and desktop</li>
+      </ul>
+    </div>
+    <div class="preview-box fade-up">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#3b9eff,#00d0f0)"></div>
+      <div class="preview-titlebar">
+        <div class="preview-dot" style="background:#ff5f5f"></div>
+        <div class="preview-dot" style="background:#ffbe2e"></div>
+        <div class="preview-dot" style="background:#00e080"></div>
+        <span style="font-size:0.72rem;color:var(--ink-muted);margin-left:0.5rem;letter-spacing:0.06em">tangent / dashboard</span>
+      </div>
+      <div class="preview-mini-cards">
+        <div class="preview-mini-card">
+          <div class="preview-mini-label">⏱ Pomodoro</div>
+          <div class="preview-mini-val">24:13</div>
+          <div style="margin-top:0.5rem;height:4px;background:var(--rule);border-radius:2px">
+            <div style="width:35%;height:100%;background:var(--accent);border-radius:2px;box-shadow:0 0 6px rgba(59,158,255,0.5)"></div>
+          </div>
+        </div>
+        <div class="preview-mini-card">
+          <div class="preview-mini-label">📊 Grades</div>
+          <div class="preview-mini-val" style="color:var(--green)">87%</div>
+          <div style="font-size:0.7rem;color:var(--ink-muted);margin-top:0.2rem">Biology</div>
+        </div>
+        <div class="preview-mini-card" style="grid-column:1/-1">
+          <div class="preview-mini-label">📝 Tasks today</div>
+          <div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.4rem">
+            <div style="font-size:0.78rem;color:var(--ink-light);display:flex;align-items:center;gap:0.5rem">
+              <div style="width:8px;height:8px;border:1px solid var(--accent);border-radius:2px;flex-shrink:0"></div>
+              Finish Maths past paper
+            </div>
+            <div style="font-size:0.78rem;color:var(--ink-muted);display:flex;align-items:center;gap:0.5rem;text-decoration:line-through">
+              <div style="width:8px;height:8px;background:var(--accent);border-radius:2px;flex-shrink:0"></div>
+              Read Chemistry chapter 4
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBJECTS SECTION -->
+  <section class="section" style="padding-top:0">
+    <p class="section-label fade-up">Study tools for every subject</p>
+    <h2 class="section-title fade-up">Track any subject, any level</h2>
+    <p class="section-sub fade-up">From N5 to AH - Tangent works for whatever you're revising for.</p>
+    <div class="subjects-grid">
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">🧬</span><span class="subject-pill-name">Biology</span></div>
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">⚗️</span><span class="subject-pill-name">Chemistry</span></div>
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">⚡</span><span class="subject-pill-name">Physics</span></div>
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">📐</span><span class="subject-pill-name">Maths</span></div>
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">📜</span><span class="subject-pill-name">History</span></div>
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">🌍</span><span class="subject-pill-name">Geography</span></div>
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">📖</span><span class="subject-pill-name">English</span></div>
+      <div class="subject-pill fade-up"><span class="subject-pill-icon">🗣</span><span class="subject-pill-name">Languages</span></div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="cta-section">
+    <h2>Ready to get started?</h2>
+    <p>Join thousands of students already using Tangent to ace their exams.</p>
+    <div class="cta-btns">
+      <button class="btn-hero btn-hero-filled" onclick="openModal('signup')">Create free account</button>
+      <button class="btn-hero btn-hero-outline" onclick="openModal('login')">Sign in</button>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <a class="logo" href="#">Tangent<span>.</span></a>
+    <ul class="footer-links">
+      <li>About</li>
+      <li>Contact</li>
+      <li>Privacy</li>
+      <li>Terms</li>
+    </ul>
+    <span class="footer-copy">© 2026 Tangent. Free forever.</span>
+  </footer>
+
+  <!-- AUTH MODAL -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2 id="modalTitle">Welcome back</h2>
+      <p class="modal-sub" id="modalSub">Sign in to your Tangent account</p>
+
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tabLogin" onclick="switchTab('login')">Sign in</button>
+        <button class="modal-tab" id="tabSignup" onclick="switchTab('signup')">Sign up</button>
+      </div>
+
+      <div id="loginForm">
+        <div class="modal-field">
+          <label>Email</label>
+          <input type="email" placeholder="you@school.ac.uk" />
+        </div>
+        <div class="modal-field">
+          <label>Password</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+        <button class="modal-submit" onclick="goToDashboard()">Sign in →</button>
+      </div>
+
+      <div id="signupForm" style="display:none">
+        <div class="modal-field">
+          <label>Name</label>
+          <input type="text" placeholder="Your name" />
+        </div>
+        <div class="modal-field">
+          <label>Email</label>
+          <input type="email" placeholder="you@school.ac.uk" />
+        </div>
+        <div class="modal-field">
+          <label>Password</label>
+          <input type="password" placeholder="Choose a password" />
+        </div>
+        <button class="modal-submit" onclick="goToDashboard()">Create account →</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── MODAL ──
+    function openModal(tab) {
+      document.getElementById('authModal').classList.add('open');
+      switchTab(tab);
+    }
+    function closeModal() {
+      document.getElementById('authModal').classList.remove('open');
+    }
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('tabLogin').classList.toggle('active', isLogin);
+      document.getElementById('tabSignup').classList.toggle('active', !isLogin);
+      document.getElementById('loginForm').style.display = isLogin ? '' : 'none';
+      document.getElementById('signupForm').style.display = isLogin ? 'none' : '';
+      document.getElementById('modalTitle').textContent = isLogin ? 'Welcome back' : 'Create account';
+      document.getElementById('modalSub').textContent = isLogin ? 'Sign in to your Tangent account' : 'Start studying smarter today';
+    }
+    function goToDashboard() {
+      window.location.href = 'dashboard.html';
+    }
+    document.getElementById('authModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // ── SCROLL FADE ──
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 80);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
