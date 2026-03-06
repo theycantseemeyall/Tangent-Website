@@ -59,6 +59,7 @@
       <div class="sb-item"        data-nav="grades"   onclick="sideNav(this,'grades')">   <span class="si">📊</span> Grades</div>
       <div class="sb-item"        data-nav="calendar" onclick="sideNav(this,'calendar')"> <span class="si">📅</span> Calendar</div>
       <div class="sb-item"        data-nav="revision" onclick="sideNav(this,'revision')"> <span class="si">📘</span> Revision</div>
+      <div class="sb-item"        data-nav="notes"    onclick="sideNav(this,'notes')">    <span class="si">📓</span> Notes</div>
 
       <div class="sb-divider"></div>
 
@@ -270,6 +271,8 @@
         <div class="tp-header">
           <span style="font-size:1.3rem">📘</span>
           <div><div class="tp-title">Revision Notes</div><div class="tp-sub">Upload and organise notes by subject</div></div>
+          <button class="t-btn" onclick="openNotesFromRevision()"
+                  style="margin-left:auto;font-size:0.72rem;padding:0.25rem 0.75rem">📓 View in Notes →</button>
         </div>
         <div class="tp-body" style="display:flex;flex-direction:column;gap:1.2rem">
           <div style="display:flex;gap:0.8rem;flex-wrap:wrap;align-items:flex-end">
@@ -309,6 +312,114 @@
             <div id="revNotesList" style="display:flex;flex-direction:column;gap:0.4rem"></div>
           </div>
         </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           NOTES NOTEBOOK PANEL
+           Three levels: Subject shelf → Topic folders → Flashcard stack
+      ═══════════════════════════════════════════════════ -->
+      <div class="tool-panel" id="panel-notes">
+        <div class="tp-header" id="notesHeader">
+          <span style="font-size:1.3rem">📓</span>
+          <div>
+            <div class="tp-title">Notes Notebook</div>
+            <div class="tp-sub">All revision notes, organised by subject &amp; topic</div>
+          </div>
+          <!-- Breadcrumb shown when drilling in -->
+          <div id="notesBreadcrumb" style="display:none;margin-left:1rem;font-size:0.74rem;color:var(--ink-muted);display:flex;align-items:center;gap:0.4rem"></div>
+          <!-- "View as Flashcards" button shown at topic level -->
+          <button id="notesFlashcardBtn" class="t-btn primary"
+                  style="display:none;margin-left:auto;font-size:0.74rem;padding:0.3rem 0.9rem"
+                  onclick="enterFlashcardMode()">⚡ Flashcard Mode</button>
+          <!-- Back button shown when inside topic or flashcard view -->
+          <button id="notesBackBtn" class="t-btn"
+                  style="display:none;margin-left:auto;font-size:0.74rem;padding:0.3rem 0.9rem"
+                  onclick="notesGoBack()">← Back</button>
+        </div>
+
+        <!-- LEVEL 1: Subject shelf -->
+        <div id="notesSubjectView" class="tp-body">
+          <div id="notesSubjectGrid" class="nt-subject-grid"></div>
+        </div>
+
+        <!-- LEVEL 2: Topic folders inside a subject -->
+        <div id="notesTopicView" class="tp-body" style="display:none">
+          <div id="notesTopicGrid" class="nt-topic-grid"></div>
+        </div>
+
+        <!-- LEVEL 3: Notes stack inside a topic -->
+        <div id="notesStackView" style="display:none;flex:1;overflow:hidden;display:none;flex-direction:column">
+          <!-- Toolbar: note count + action buttons -->
+          <div style="display:flex;align-items:center;gap:0.7rem;padding:0.5rem 1.2rem;border-bottom:1px solid var(--rule);background:var(--bg-card);flex-shrink:0">
+            <span id="notesStackCount" style="font-size:0.72rem;color:var(--ink-muted)"></span>
+            <div style="display:flex;gap:0.5rem;margin-left:auto">
+              <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.7rem"
+                      onclick="ntOpenWrittenNoteEditor()">✏️ Write a Note</button>
+              <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.7rem"
+                      onclick="notesQuickUpload()">📎 Upload Image</button>
+            </div>
+          </div>
+          <!-- Scrollable stack of full-size images/notes -->
+          <div id="notesStackScroll" class="nt-stack-scroll"></div>
+        </div>
+
+        <!-- LEVEL 3c: Written note editor (inline Notion-style) -->
+        <div id="notesWriterView" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+          <!-- Editor toolbar -->
+          <div class="nt-writer-toolbar">
+            <button class="wfmt-btn" onclick="ntWExec('bold')" title="Bold"><b>B</b></button>
+            <button class="wfmt-btn" onclick="ntWExec('italic')" title="Italic"><i>I</i></button>
+            <button class="wfmt-btn" onclick="ntWExec('underline')" title="Underline"><u>U</u></button>
+            <button class="wfmt-btn" onclick="ntWExec('strikeThrough')" title="Strikethrough"><s>S</s></button>
+            <div class="wfmt-sep"></div>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h1')" title="Heading 1">H1</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h2')" title="Heading 2">H2</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h3')" title="Heading 3">H3</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','p')"  title="Paragraph">¶</button>
+            <div class="wfmt-sep"></div>
+            <button class="wfmt-btn" onclick="ntWExec('insertUnorderedList')" title="Bullet list">• List</button>
+            <button class="wfmt-btn" onclick="ntWExec('insertOrderedList')"   title="Numbered list">1. List</button>
+            <div class="wfmt-sep"></div>
+            <button class="wfmt-btn" onclick="ntInsertCallout('info')"    title="Info callout">💡</button>
+            <button class="wfmt-btn" onclick="ntInsertCallout('warning')" title="Warning callout">⚠️</button>
+            <button class="wfmt-btn" onclick="ntInsertCallout('success')" title="Success callout">✅</button>
+            <div class="wfmt-sep"></div>
+            <button class="wfmt-btn" onclick="ntWExec('insertHorizontalRule')" title="Divider">—</button>
+            <div class="wfmt-sep" style="margin-left:auto"></div>
+            <button class="t-btn primary" id="ntWriterSaveBtn" onclick="ntSaveWrittenNote()"
+                    style="font-size:0.72rem;padding:0.25rem 0.8rem">Save Note</button>
+            <button class="t-btn" onclick="ntCancelWrittenNote()"
+                    style="font-size:0.72rem;padding:0.25rem 0.7rem">Cancel</button>
+          </div>
+          <!-- Title input -->
+          <div style="padding:1.2rem 10% 0;background:var(--bg);border-bottom:1px solid var(--rule);flex-shrink:0">
+            <input type="text" id="ntWriterTitle" class="nt-writer-title-inp"
+                   placeholder="Note title…" />
+          </div>
+          <!-- Editable body -->
+          <div class="nt-writer-body">
+            <div id="ntWriterEditor" class="nt-writer-editor"
+                 contenteditable="true"
+                 data-placeholder="Start writing your note… use the toolbar to format, or just type."></div>
+          </div>
+          <!-- Save indicator -->
+          <div style="display:flex;align-items:center;gap:0.7rem;padding:0.3rem 10%;background:var(--bg-card);border-top:1px solid var(--rule);font-size:0.62rem;color:var(--ink-muted);flex-shrink:0">
+            <span id="ntWriterStatus">Unsaved</span>
+            <span style="margin-left:auto">Ctrl+S to save</span>
+          </div>
+        </div>
+
+        <!-- LEVEL 3b: Flashcard mode -->
+        <div id="notesFlashcardView" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+          <div style="display:flex;align-items:center;justify-content:center;gap:1.2rem;padding:0.6rem 1.2rem;border-bottom:1px solid var(--rule);background:var(--bg-card);flex-shrink:0">
+            <span id="fcCounter" style="font-size:0.78rem;color:var(--ink-muted)">1 / 1</span>
+            <button class="t-btn" id="fcPrev" onclick="fcStep(-1)" style="font-size:0.8rem;padding:0.25rem 0.8rem">← Prev</button>
+            <button class="t-btn" id="fcNext" onclick="fcStep(1)"  style="font-size:0.8rem;padding:0.25rem 0.8rem">Next →</button>
+            <button class="t-btn" onclick="fcShuffle()" style="font-size:0.72rem;padding:0.25rem 0.7rem">🔀 Shuffle</button>
+          </div>
+          <div id="notesFlashcardScroll" class="nt-flashcard-scroll"></div>
+        </div>
+
       </div>
 
       <!-- SUBJECT OVERVIEW -->
