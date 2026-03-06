@@ -29,9 +29,10 @@ let folders = [
   { id:3, name:'Grades',    emoji:'📊',  colour:'#3aab6e', panel:'grades',   image: null },
   { id:4, name:'Calendar',  emoji:'📅',  colour:'#e8a030', panel:'calendar', image: null },
   { id:5, name:'Revision',  emoji:'📘',  colour:'#9b6fd4', panel:'revision', image: null },
+  { id:6, name:'Notes',     emoji:'📓',  colour:'#e8a030', panel:'notes',    image: null },
 ];
 
-let nextId = 6;
+let nextId = 7;
 
 // ═════════════════════════════════════════════
 // STATE
@@ -257,6 +258,7 @@ function openFolder(id) {
   document.getElementById('pathLabel').textContent   = f.name;
   setActiveSb(f.panel);
   showDetail(f);
+  if (f.panel === 'notes') renderNotesSubjectView();
 }
 
 function selectFolder(id) {
@@ -852,6 +854,7 @@ const addSubjectFn = () => {
   pomActiveId = newSubj2.id;
   renderPomTabs(); renderPomDetail(); updatePomBadge();
   if (typeof renderSbSubjects === 'function') renderSbSubjects();
+  if (typeof renderNotesSubjectView === 'function') renderNotesSubjectView();
 };
 
 document.getElementById('pomSubjectConfirm').addEventListener('click', addSubjectFn);
@@ -1009,6 +1012,7 @@ document.getElementById('noteUpload').addEventListener('change', e => {
         document.getElementById('revCategoryInput').value = '';
         document.getElementById('noteUpload').value = '';
         if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+        renderNotesSubjectView(); // keep Notes panel in sync
       }
     };
     reader.readAsDataURL(file);
@@ -1030,7 +1034,11 @@ function renderRevNotesList() {
   if (shown.length === 0) { container.innerHTML = '<div style="font-size:0.78rem;color:var(--ink-muted);font-style:italic;padding:0.5rem 0">No notes yet — upload above</div>'; return; }
   shown.forEach(n => {
     const row = document.createElement('div'); row.className = 'rev-note-row';
-    const thumbHTML = n.type === 'image' ? `<img class="rev-note-thumb" src="${n.data}" alt="${n.name}" />` : `<div class="rev-note-type-badge">📄</div>`;
+    const thumbHTML = n.type === 'image'
+      ? `<img class="rev-note-thumb" src="${n.data}" alt="${n.name}" />`
+      : n.type === 'written'
+        ? `<div class="rev-note-type-badge">✏️</div>`
+        : `<div class="rev-note-type-badge">📄</div>`;
     const subjTag = n.subject ? `<span class="rev-note-tag subject">${n.subject}</span>` : '';
     const catTag  = n.category ? `<span class="rev-note-tag category">${n.category}</span>` : '';
     row.innerHTML = `
@@ -1060,6 +1068,7 @@ window.deleteNote = function(id) {
   revisionNotes = revisionNotes.filter(x => x.id !== id);
   renderRevNotesList(); renderRevCategoryFilter();
   if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+  renderNotesSubjectView();
 };
 
 document.getElementById('revFilterSubject')?.addEventListener('change',  renderRevNotesList);
@@ -1121,6 +1130,7 @@ function confirmAddSubjectSidebar() {
   inp.value = '';
   document.getElementById('sbAddSubjectForm').style.display = 'none';
   renderPomTabs(); renderSbSubjects(); renderRevSubjectPicker(); renderSubjectFolders();
+  renderNotesSubjectView();
   openSubjectPanel(newSubj.id);
 }
 
@@ -1427,9 +1437,520 @@ function rgbToHex(str) {
   return '#' + m.slice(0,3).map(n => parseInt(n).toString(16).padStart(2,'0')).join('');
 }
 
+// ═════════════════════════════════════════════════════════
+// NOTES NOTEBOOK SYSTEM
+// ─────────────────────────────────────────────────────────
+// Three-level drill-down:
+//   Level 1 — Subject shelf   (one card per subject that has notes)
+//   Level 2 — Topic folders   (grouped by note.category)
+//   Level 3 — Note stack      (full-size scrollable images)
+//           OR Flashcard mode (one image at a time, prev/next)
+//
+// State:
+//   ntActiveSubject  — subject name string currently open
+//   ntActiveTopic    — category string currently open
+//   ntFlashcardNotes — ordered array of notes for flashcard session
+//   ntFcIndex        — current flashcard index
+// ═════════════════════════════════════════════════════════
+
+let ntActiveSubject  = null;
+let ntActiveTopic    = null;
+let ntFlashcardNotes = [];
+let ntFcIndex        = 0;
+let ntEditingNoteId  = null; // null = new note, id = editing existing
+
+// ── Palette for topic folder colours (cycles) ──
+const NT_TOPIC_COLOURS = [
+  '#539ec4','#3aab6e','#e8a030','#9b6fd4','#e067a0',
+  '#5bc8ac','#e05050','#2a8bbc','#ffe066','#8b5a2b'
+];
+
+// ── Helper: show/hide Notes sub-views ──
+function ntShowView(view) {
+  // view = 'subject' | 'topic' | 'stack' | 'flashcard' | 'writer'
+  document.getElementById('notesSubjectView').style.display   = view === 'subject'   ? '' : 'none';
+  document.getElementById('notesTopicView').style.display     = view === 'topic'     ? '' : 'none';
+
+  const stackEl = document.getElementById('notesStackView');
+  stackEl.style.display = view === 'stack' ? 'flex' : 'none';
+
+  const fcEl = document.getElementById('notesFlashcardView');
+  fcEl.style.display = view === 'flashcard' ? 'flex' : 'none';
+
+  const wrEl = document.getElementById('notesWriterView');
+  wrEl.style.display = view === 'writer' ? 'flex' : 'none';
+
+  // Back button — shown when not at subject level
+  document.getElementById('notesBackBtn').style.display       = view !== 'subject' ? '' : 'none';
+  // Flashcard button — shown only at stack level
+  document.getElementById('notesFlashcardBtn').style.display  = view === 'stack' ? '' : 'none';
+
+  // Breadcrumb
+  const bc = document.getElementById('notesBreadcrumb');
+  if (view === 'subject') {
+    bc.style.display = 'none';
+    bc.innerHTML = '';
+  } else {
+    bc.style.display = 'flex';
+    let html = `<span style="color:var(--accent);cursor:pointer" onclick="renderNotesSubjectView()">Notebooks</span>`;
+    if (ntActiveSubject) {
+      html += `<span style="color:var(--rule)">›</span>
+               <span style="color:var(--accent);cursor:pointer" onclick="openNotesSubject('${ntActiveSubject.replace(/'/g,"\\'")}')">
+                 ${ntActiveSubject}
+               </span>`;
+    }
+    if (ntActiveTopic && view !== 'topic') {
+      html += `<span style="color:var(--rule)">›</span>
+               <span style="color:var(--ink-light)">${ntActiveTopic}</span>`;
+    }
+    if (view === 'flashcard') {
+      html += `<span style="color:var(--rule)">›</span>
+               <span style="color:var(--ink-light)">Flashcards</span>`;
+    }
+    bc.innerHTML = html;
+  }
+}
+
+// ──────────────────────────────────────────────
+// LEVEL 1: Subject shelf
+// Shows ALL pomSubjects + a General bucket,
+// whether or not they have any notes yet.
+// ──────────────────────────────────────────────
+function renderNotesSubjectView() {
+  ntActiveSubject = null;
+  ntActiveTopic   = null;
+  ntShowView('subject');
+
+  const grid  = document.getElementById('notesSubjectGrid');
+
+  grid.innerHTML = '';
+  
+  // General always first, then every subject
+  const allSubjects = [
+    { name: 'General', emoji: '📝', colour: '#539ec4' },
+    ...pomSubjects.map((s, i) => ({
+      name:   s.name,
+      emoji:  SUBJ_EMOJIS[i % SUBJ_EMOJIS.length],
+      colour: NT_TOPIC_COLOURS[i % NT_TOPIC_COLOURS.length],
+    })),
+  ];
+
+  allSubjects.forEach(({ name: subjName, emoji, colour }, i) => {
+    const notes = subjName === 'General'
+      ? revisionNotes.filter(n => !n.subject)
+      : revisionNotes.filter(n => n.subject === subjName);
+
+    const topics     = [...new Set(notes.map(n => n.category || 'General'))];
+    const coverNote  = notes.find(n => n.type === 'image');
+    const noteCount  = notes.length;
+    const topicCount = noteCount > 0 ? topics.length : 0;
+
+    const card = document.createElement('div');
+    card.className = 'nt-subject-card';
+    card.style.setProperty('--nt-colour', colour);
+
+    card.innerHTML = `
+      <div class="nt-subject-cover">
+        ${coverNote
+          ? `<img src="${coverNote.data}" alt="" class="nt-subject-cover-img" />`
+          : `<div class="nt-subject-cover-placeholder" style="background:${colour}22">
+               <span style="font-size:2.5rem">${emoji}</span>
+             </div>`
+        }
+        <div class="nt-subject-cover-bar" style="background:${colour}">
+          <span class="nt-subject-cover-name">${subjName}</span>
+          <span class="nt-subject-cover-count">${noteCount > 0 ? `${noteCount} note${noteCount !== 1 ? 's' : ''}` : 'Empty'}</span>
+        </div>
+      </div>
+      <div class="nt-subject-meta">
+        ${topicCount > 0
+          ? `<span class="nt-subject-topics">${topicCount} topic${topicCount !== 1 ? 's' : ''}</span>`
+          : `<span class="nt-subject-topics" style="color:var(--ink-muted);border-style:dashed">No notes yet — click to start</span>`
+        }
+      </div>
+    `;
+
+    card.addEventListener('click', () => openNotesSubject(subjName));
+    grid.appendChild(card);
+  });
+}
+
+// ──────────────────────────────────────────────
+// LEVEL 2: Topic folders inside a subject
+// ──────────────────────────────────────────────
+function openNotesSubject(subjName) {
+  ntActiveSubject = subjName;
+  ntActiveTopic   = null;
+  ntShowView('topic');
+
+  const grid = document.getElementById('notesTopicGrid');
+  grid.innerHTML = '';
+
+  const notes = subjName === 'General'
+    ? revisionNotes.filter(n => !n.subject)
+    : revisionNotes.filter(n => n.subject === subjName);
+
+  const topics = [...new Set(notes.map(n => n.category || 'General'))];
+
+  // "All notes" folder always first
+  const allCard = buildTopicCard('All Notes', notes, '#539ec4', '📚');
+  grid.appendChild(allCard);
+
+  topics.forEach((topic, i) => {
+    const topicNotes = notes.filter(n => (n.category || 'General') === topic);
+    const colour = NT_TOPIC_COLOURS[(i + 1) % NT_TOPIC_COLOURS.length];
+    const card = buildTopicCard(topic, topicNotes, colour, '📁');
+    grid.appendChild(card);
+  });
+}
+
+function buildTopicCard(topicName, notes, colour, emoji) {
+  const card = document.createElement('div');
+  card.className = 'nt-topic-card';
+
+  // Up to 4 thumbnail previews on the folder face
+  const imageNotes = notes.filter(n => n.type === 'image').slice(0, 4);
+
+  let thumbsHTML = '';
+  if (imageNotes.length > 0) {
+    thumbsHTML = `<div class="nt-topic-thumbs">
+      ${imageNotes.map(n => `<img src="${n.data}" class="nt-topic-thumb" alt="" />`).join('')}
+    </div>`;
+  } else {
+    thumbsHTML = `<div class="nt-topic-thumbs nt-topic-thumbs-empty">
+      <span style="font-size:1.8rem;color:${colour}88">${emoji}</span>
+    </div>`;
+  }
+
+  card.innerHTML = `
+    <div class="nt-topic-folder" style="--nt-colour:${colour}">
+      <div class="nt-topic-folder-tab" style="background:${colour}"></div>
+      <div class="nt-topic-folder-body" style="border-color:${colour}44;background:${colour}0d">
+        ${thumbsHTML}
+      </div>
+    </div>
+    <div class="nt-topic-name">${topicName}</div>
+    <div class="nt-topic-count">${notes.length} note${notes.length !== 1 ? 's' : ''}</div>
+  `;
+
+  card.addEventListener('click', () => openNotesTopic(topicName, notes));
+  return card;
+}
+
+// ──────────────────────────────────────────────
+// LEVEL 3: Note stack inside a topic
+// ──────────────────────────────────────────────
+function openNotesTopic(topicName, notes) {
+  ntActiveTopic    = topicName;
+  ntFlashcardNotes = notes.filter(n => n.type !== 'written'); // only image/pdf for flashcards
+  ntShowView('stack');
+
+  document.getElementById('notesStackCount').textContent =
+    `${notes.length} note${notes.length !== 1 ? 's' : ''} · ${ntActiveSubject} › ${topicName}`;
+
+  const scroll = document.getElementById('notesStackScroll');
+  scroll.innerHTML = '';
+
+  if (notes.length === 0) {
+    scroll.innerHTML = `
+      <div class="nt-empty-state">
+        <div style="font-size:2.5rem;margin-bottom:0.8rem">📭</div>
+        <div style="font-size:0.9rem;font-weight:600;color:var(--ink);margin-bottom:0.3rem">No notes yet</div>
+        <div style="font-size:0.78rem;color:var(--ink-muted);margin-bottom:1.2rem">Write a note or upload an image to get started</div>
+        <div style="display:flex;gap:0.6rem;justify-content:center">
+          <button class="t-btn primary" onclick="ntOpenWrittenNoteEditor()" style="font-size:0.78rem">✏️ Write a Note</button>
+          <button class="t-btn" onclick="notesQuickUpload()" style="font-size:0.78rem">📎 Upload Image</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  notes.forEach((n, i) => {
+    const card = document.createElement('div');
+    card.className = 'nt-stack-card';
+
+    if (n.type === 'written') {
+      // Written note — rendered inline like a document page
+      card.innerHTML = `
+        <div class="nt-written-card">
+          <div class="nt-written-card-header">
+            <span class="nt-written-icon">📝</span>
+            <span class="nt-written-title">${n.name}</span>
+            <span class="nt-written-date">${n.date}</span>
+            <button class="nt-written-edit-btn" onclick="ntOpenWrittenNoteEditor(${n.id})">Edit</button>
+            <button class="nt-written-del-btn" onclick="deleteNote(${n.id})">🗑</button>
+          </div>
+          <div class="nt-written-body nt-writer-editor">${n.htmlContent || ''}</div>
+        </div>
+      `;
+    } else if (n.type === 'image') {
+      card.innerHTML = `
+        <div class="nt-stack-img-label">
+          <span>${n.name}</span>
+          <div style="display:flex;gap:0.4rem">
+            <button class="nt-img-action-btn" onclick="viewNote(${n.id})" title="Open full size">⤢</button>
+            <button class="nt-img-action-btn nt-del" onclick="deleteNote(${n.id})" title="Delete">🗑</button>
+          </div>
+        </div>
+        <div class="nt-stack-img-wrap">
+          <img src="${n.data}" class="nt-stack-img" alt="${n.name}" loading="lazy" />
+        </div>
+      `;
+    } else {
+      // PDF
+      card.innerHTML = `
+        <div class="nt-stack-img-label">
+          <span>${n.name}</span>
+          <button class="nt-img-action-btn nt-del" onclick="deleteNote(${n.id})" title="Delete">🗑</button>
+        </div>
+        <div class="nt-stack-pdf-preview">
+          <div style="font-size:3rem;margin-bottom:0.6rem">📄</div>
+          <div style="font-size:0.82rem;font-weight:600;color:var(--ink)">${n.name}</div>
+          <div style="font-size:0.7rem;color:var(--ink-muted);margin-top:0.2rem">${n.date}</div>
+          <button class="t-btn primary" onclick="viewNote(${n.id})" style="margin-top:0.9rem;font-size:0.76rem">📂 Open PDF</button>
+        </div>
+      `;
+    }
+
+    scroll.appendChild(card);
+  });
+}
+
+// ──────────────────────────────────────────────
+// FLASHCARD MODE
+// ──────────────────────────────────────────────
+function enterFlashcardMode() {
+  if (ntFlashcardNotes.length === 0) return;
+  ntFcIndex = 0;
+  ntShowView('flashcard');
+  renderFlashcard();
+}
+
+function renderFlashcard() {
+  const notes  = ntFlashcardNotes;
+  const n      = notes[ntFcIndex];
+  const scroll = document.getElementById('notesFlashcardScroll');
+
+  document.getElementById('fcCounter').textContent = `${ntFcIndex + 1} / ${notes.length}`;
+  document.getElementById('fcPrev').disabled = ntFcIndex === 0;
+  document.getElementById('fcNext').disabled = ntFcIndex === notes.length - 1;
+
+  scroll.innerHTML = '';
+
+  const card = document.createElement('div');
+  card.className = 'nt-fc-card';
+
+  if (n.type === 'image') {
+    card.innerHTML = `
+      <div class="nt-fc-label">${ntFcIndex + 1} / ${notes.length} — ${n.name}</div>
+      <img src="${n.data}" class="nt-fc-img" alt="${n.name}" />
+    `;
+  } else {
+    card.innerHTML = `
+      <div class="nt-fc-label">${ntFcIndex + 1} / ${notes.length}</div>
+      <div class="nt-stack-pdf-preview">
+        <div style="font-size:3rem;margin-bottom:0.6rem">📄</div>
+        <div style="font-size:0.9rem;font-weight:600;color:var(--ink)">${n.name}</div>
+        <button class="t-btn primary" onclick="viewNote(${n.id})" style="margin-top:1rem">📂 Open PDF</button>
+      </div>
+    `;
+  }
+
+  scroll.appendChild(card);
+}
+
+function fcStep(dir) {
+  const newIdx = ntFcIndex + dir;
+  if (newIdx < 0 || newIdx >= ntFlashcardNotes.length) return;
+  ntFcIndex = newIdx;
+  renderFlashcard();
+}
+
+function fcShuffle() {
+  // Fisher-Yates shuffle
+  const arr = [...ntFlashcardNotes];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  ntFlashcardNotes = arr;
+  ntFcIndex = 0;
+  renderFlashcard();
+}
+
+// ──────────────────────────────────────────────
+// BACK NAVIGATION
+// ──────────────────────────────────────────────
+function notesGoBack() {
+  const stackVisible  = document.getElementById('notesStackView').style.display !== 'none';
+  const fcVisible     = document.getElementById('notesFlashcardView').style.display !== 'none';
+  const writerVisible = document.getElementById('notesWriterView').style.display !== 'none';
+
+  if (fcVisible) {
+    ntShowView('stack');
+    openNotesTopic(ntActiveTopic, ntFlashcardNotes);
+  } else if (writerVisible) {
+    // back from writer → stack
+    openNotesTopic(ntActiveTopic, revisionNotes.filter(n =>
+      ntActiveSubject === 'General' ? !n.subject : n.subject === ntActiveSubject
+    ).filter(n => ntActiveTopic === 'All Notes' ? true : (n.category || 'General') === ntActiveTopic));
+  } else if (stackVisible) {
+    openNotesSubject(ntActiveSubject);
+  } else {
+    renderNotesSubjectView();
+  }
+}
+
+// ──────────────────────────────────────────────
+// QUICK UPLOAD: navigate to Revision, pre-fill subject + category
+// ──────────────────────────────────────────────
+function notesQuickUpload() {
+  const picker = document.getElementById('revSubjectPicker');
+  const catInp = document.getElementById('revCategoryInput');
+  if (picker && ntActiveSubject && ntActiveSubject !== 'General') picker.value = ntActiveSubject;
+  if (catInp && ntActiveTopic && ntActiveTopic !== 'All Notes' && ntActiveTopic !== 'General') catInp.value = ntActiveTopic;
+  const f = folders.find(x => x.panel === 'revision');
+  if (f) openFolder(f.id);
+}
+
+// ──────────────────────────────────────────────
+// WRITTEN NOTE EDITOR (inline Notion-style)
+// ──────────────────────────────────────────────
+
+let ntWriterAutoSaveTimer = null;
+
+function ntOpenWrittenNoteEditor(existingId) {
+  ntEditingNoteId = existingId || null;
+  ntShowView('writer');
+
+  const titleInp = document.getElementById('ntWriterTitle');
+  const editor   = document.getElementById('ntWriterEditor');
+  const status   = document.getElementById('ntWriterStatus');
+
+  if (existingId) {
+    const n = revisionNotes.find(x => x.id === existingId);
+    if (n) {
+      titleInp.value   = n.name;
+      editor.innerHTML = n.htmlContent || '';
+    }
+  } else {
+    titleInp.value   = '';
+    editor.innerHTML = '';
+  }
+
+  status.textContent = 'Unsaved';
+  status.style.color = 'var(--ink-muted)';
+  titleInp.focus();
+}
+
+function ntWExec(cmd, val) {
+  document.getElementById('ntWriterEditor').focus();
+  document.execCommand(cmd, false, val || null);
+}
+
+function ntInsertCallout(type) {
+  const icons = { info: '💡', warning: '⚠️', success: '✅' };
+  document.getElementById('ntWriterEditor').focus();
+  document.execCommand('insertHTML', false,
+    `<div data-callout="${type}" contenteditable="true">${icons[type]} Write here…</div><p></p>`
+  );
+}
+
+function ntSaveWrittenNote() {
+  const title   = document.getElementById('ntWriterTitle').value.trim() || 'Untitled Note';
+  const content = document.getElementById('ntWriterEditor').innerHTML.trim();
+  const status  = document.getElementById('ntWriterStatus');
+
+  if (!content || content === '') {
+    status.textContent = 'Nothing to save';
+    return;
+  }
+
+  const subjName = ntActiveSubject && ntActiveSubject !== 'General' ? ntActiveSubject : '';
+  const matchSubj = pomSubjects.find(s => s.name === subjName);
+  const category  = ntActiveTopic === 'All Notes' ? '' : (ntActiveTopic || '');
+
+  if (ntEditingNoteId) {
+    // Update existing
+    const n = revisionNotes.find(x => x.id === ntEditingNoteId);
+    if (n) {
+      n.name        = title;
+      n.htmlContent = content;
+      n.date        = todayStr();
+    }
+  } else {
+    // Create new written note
+    revisionNotes.push({
+      id:          revNextNoteId++,
+      name:        title,
+      type:        'written',
+      htmlContent: content,
+      data:        null,
+      subject:     subjName,
+      subjId:      matchSubj ? matchSubj.id : null,
+      category:    category,
+      date:        todayStr()
+    });
+  }
+
+  status.textContent = '✓ Saved';
+  status.style.color = 'var(--green)';
+  ntEditingNoteId = null;
+
+  renderRevNotesList();
+  renderNotesSubjectView();
+
+  // Go back to stack after a brief pause
+  setTimeout(() => {
+    const allSubjNotes = ntActiveSubject === 'General'
+      ? revisionNotes.filter(n => !n.subject)
+      : revisionNotes.filter(n => n.subject === ntActiveSubject);
+    const topicNotes = ntActiveTopic === 'All Notes'
+      ? allSubjNotes
+      : allSubjNotes.filter(n => (n.category || 'General') === ntActiveTopic);
+    openNotesTopic(ntActiveTopic, topicNotes);
+  }, 600);
+}
+
+function ntCancelWrittenNote() {
+  ntEditingNoteId = null;
+  const allSubjNotes = ntActiveSubject === 'General'
+    ? revisionNotes.filter(n => !n.subject)
+    : revisionNotes.filter(n => n.subject === ntActiveSubject);
+  const topicNotes = ntActiveTopic === 'All Notes'
+    ? allSubjNotes
+    : allSubjNotes.filter(n => (n.category || 'General') === ntActiveTopic);
+  openNotesTopic(ntActiveTopic, topicNotes);
+}
+
+// Ctrl+S to save
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 's') {
+    const wrVisible = document.getElementById('notesWriterView')?.style.display !== 'none';
+    if (wrVisible) { e.preventDefault(); ntSaveWrittenNote(); }
+  }
+});
+
+// ── Wire up the editor's Ctrl+S and auto-update status ──
+setTimeout(() => {
+  const editor = document.getElementById('ntWriterEditor');
+  if (!editor) return;
+  editor.addEventListener('input', () => {
+    const status = document.getElementById('ntWriterStatus');
+    status.textContent = 'Unsaved';
+    status.style.color = 'var(--ink-muted)';
+  });
+}, 0);
+
+window.openNotesFromRevision = function() {
+  const f = folders.find(x => x.panel === 'notes');
+  if (f) openFolder(f.id);
+};
+
 // ═════════════════════════════════════════════
 // INITIAL RENDER
 // ═════════════════════════════════════════════
 showHome();
 renderSbSubjects();
 renderRevSubjectPicker();
+renderNotesSubjectView();
