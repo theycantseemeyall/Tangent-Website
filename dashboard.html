@@ -516,6 +516,90 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════
+       POMODORO FULLSCREEN OVERLAY
+  ═══════════════════════════════════════════════════ -->
+  <div id="pomFullscreen" class="pom-fs-overlay">
+
+    <!-- Top bar: subject name + minimise -->
+    <div class="pom-fs-topbar">
+      <span id="pomFsSubject" class="pom-fs-subject-label"></span>
+      <button class="pom-fs-minimise" onclick="pomExitFullscreen()" title="Minimise">⌃ Minimise</button>
+    </div>
+
+    <!-- Centre: big ring -->
+    <div class="pom-fs-centre">
+      <div class="pom-fs-ring-wrap">
+        <svg viewBox="0 0 260 260" class="pom-fs-svg">
+          <circle class="pom-fs-ring-fill" cx="130" cy="130" r="110"/>
+          <circle class="pom-fs-bg"        cx="130" cy="130" r="118"/>
+          <circle class="pom-fs-progress"  cx="130" cy="130" r="118"/>
+        </svg>
+        <div class="pom-fs-time"  id="pomFsDisplay">25:00</div>
+        <div class="pom-fs-label" id="pomFsLabel">focus</div>
+      </div>
+
+      <!-- Controls -->
+      <div class="pom-fs-controls">
+        <button class="pom-fs-btn secondary" id="pomFsReset"  onclick="pomFsDoReset()">↺ Reset</button>
+        <button class="pom-fs-btn primary"   id="pomFsToggle" onclick="pomFsDoToggle()">⏸ Pause</button>
+        <button class="pom-fs-btn secondary" id="pomFsSkip"   onclick="pomFsDoSkip()">⏭ Skip</button>
+      </div>
+    </div>
+
+    <!-- Bottom: session stats row -->
+    <div class="pom-fs-stats">
+      <div class="pom-fs-stat">
+        <div class="pom-fs-stat-num" id="pomFsHours">00</div>
+        <div class="pom-fs-stat-unit">hrs studied</div>
+      </div>
+      <div class="pom-fs-stat-divider"></div>
+      <div class="pom-fs-stat">
+        <div class="pom-fs-stat-num" id="pomFsMins">00</div>
+        <div class="pom-fs-stat-unit">min studied</div>
+      </div>
+      <div class="pom-fs-stat-divider"></div>
+      <div class="pom-fs-stat">
+        <div class="pom-fs-stat-num" id="pomFsSessions">0</div>
+        <div class="pom-fs-stat-unit">sessions today</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════
+       POMODORO FULLSCREEN OVERLAY
+  ═══════════════════════════════════════════════════ -->
+  <div id="pomFullscreen" class="pom-fs-overlay">
+    <div class="pom-fs-topbar">
+      <span id="pomFsSubject" class="pom-fs-subject-label"></span>
+      <button class="pom-fs-minimise" onclick="pomExitFullscreen()">⌃ Minimise</button>
+    </div>
+    <div class="pom-fs-centre">
+      <div class="pom-fs-ring-wrap">
+        <svg viewBox="0 0 260 260" class="pom-fs-svg">
+          <circle class="pom-fs-ring-fill" cx="130" cy="130" r="110"/>
+          <circle class="pom-fs-bg"        cx="130" cy="130" r="118"/>
+          <circle class="pom-fs-progress"  cx="130" cy="130" r="118" id="pomFsProgressCircle"/>
+        </svg>
+        <div class="pom-fs-time"  id="pomFsDisplay">25:00</div>
+        <div class="pom-fs-label" id="pomFsLabel">focus</div>
+      </div>
+      <div class="pom-fs-controls">
+        <button class="pom-fs-btn secondary" onclick="pomFsDoReset()">↺ Reset</button>
+        <button class="pom-fs-btn primary"   id="pomFsToggle" onclick="pomFsDoToggle()">⏸ Pause</button>
+        <button class="pom-fs-btn secondary" onclick="pomFsDoSkip()">⏭ Skip</button>
+      </div>
+    </div>
+    <div class="pom-fs-stats">
+      <div class="pom-fs-stat"><div class="pom-fs-stat-num" id="pomFsHours">0</div><div class="pom-fs-stat-unit">hrs today</div></div>
+      <div class="pom-fs-stat-divider"></div>
+      <div class="pom-fs-stat"><div class="pom-fs-stat-num" id="pomFsMins">0</div><div class="pom-fs-stat-unit">min today</div></div>
+      <div class="pom-fs-stat-divider"></div>
+      <div class="pom-fs-stat"><div class="pom-fs-stat-num" id="pomFsSessions">0</div><div class="pom-fs-stat-unit">sessions</div></div>
+    </div>
+  </div>
+
   <script src="dashboard.js"></script>
 </body>
 </html>
