@@ -772,108 +772,13 @@ function renderPomDetail() {
   col.appendChild(wrap);
 }
 
-const FS_CIRCUM = 741.42; // 2π × 118
-
 function pomUpdateRing() {
-  const fmt = pomFmt(pomTime);
-  const ratio = pomTime / pomFull;
-  const offset = FS_CIRCUM * (1 - ratio);
-
-  // Small ring (panel)
-  document.getElementById('pomDisplay').textContent = fmt;
+  document.getElementById('pomDisplay').textContent = pomFmt(pomTime);
   const circle = document.querySelector('#pomRing .progress');
   if (circle) {
     circle.style.strokeDasharray  = CIRCUM;
-    circle.style.strokeDashoffset = CIRCUM * (1 - ratio);
+    circle.style.strokeDashoffset = CIRCUM * (1 - pomTime / pomFull);
   }
-
-  // Big ring (fullscreen)
-  const fsDisplay = document.getElementById('pomFsDisplay');
-  const fsCircle  = document.getElementById('pomFsProgressCircle');
-  if (fsDisplay) fsDisplay.textContent = fmt;
-  if (fsCircle)  fsCircle.style.strokeDashoffset = offset;
-
-  // Label
-  const isBreak = pomFull <= 15 * 60;
-  const labelTxt = isBreak ? 'break' : 'focus';
-  document.getElementById('pomRingLabel').textContent = labelTxt;
-  const fsLabel = document.getElementById('pomFsLabel');
-  if (fsLabel) fsLabel.textContent = labelTxt;
-}
-
-function pomEnterFullscreen() {
-  const subj = pomSubjects.find(s => s.id === pomActiveId);
-  const label = document.getElementById('pomFsSubject');
-  if (label) label.textContent = subj ? `📚 ${subj.name}` : '📚 Untracked Session';
-  pomFsRefreshStats();
-  document.getElementById('pomFullscreen').classList.add('active');
-  document.getElementById('pomFsToggle').textContent = '⏸ Pause';
-}
-
-function pomExitFullscreen() {
-  document.getElementById('pomFullscreen').classList.remove('active');
-}
-
-function pomFsRefreshStats() {
-  // Show total studied today across all subjects
-  const todayTotal = pomSubjects.reduce((sum, s) => {
-    return sum + s.sessions
-      .filter(ses => ses.date === todayStr())
-      .reduce((a, ses) => a + ses.dur, 0);
-  }, 0);
-  const h = Math.floor(todayTotal / 3600);
-  const m = Math.floor((todayTotal % 3600) / 60);
-  const totalSessions = pomSubjects.reduce((sum, s) =>
-    sum + s.sessions.filter(ses => ses.date === todayStr()).length, 0);
-  const hEl = document.getElementById('pomFsHours');
-  const mEl = document.getElementById('pomFsMins');
-  const sEl = document.getElementById('pomFsSessions');
-  if (hEl) hEl.textContent = h;
-  if (mEl) mEl.textContent = m;
-  if (sEl) sEl.textContent = totalSessions;
-}
-
-function pomFsDoToggle() {
-  const btn = document.getElementById('pomFsToggle');
-  if (pomRunning) {
-    // Pause
-    clearInterval(pomTimer);
-    pomRunning = false;
-    pomTimer = null;
-    if (btn) btn.textContent = '▶ Resume';
-  } else {
-    // Resume
-    pomRunning = true;
-    pomTimer = setInterval(() => {
-      if (pomTime > 0) {
-        pomTime--; pomElapsed++; pomUpdateRing();
-        const liveSubj = pomSubjects.find(s => s.id === pomActiveId);
-        if (liveSubj) pomLiveOffset = pomElapsed;
-        renderPomStats();
-        pomFsRefreshStats();
-      } else {
-        pomSessionComplete(pomElapsed);
-        pomExitFullscreen();
-      }
-    }, 1000);
-    if (btn) btn.textContent = '⏸ Pause';
-  }
-}
-
-function pomFsDoReset() {
-  clearInterval(pomTimer);
-  pomRunning = false; pomTimer = null;
-  pomElapsed = 0; pomLiveOffset = 0;
-  pomTime = pomFull;
-  pomUpdateRing(); renderPomStats();
-  pomExitFullscreen();
-}
-
-function pomFsDoSkip() {
-  const elapsed = pomElapsed > 0 ? pomElapsed : pomFull - pomTime;
-  clearInterval(pomTimer); pomRunning = false; pomTimer = null;
-  pomSessionComplete(elapsed);
-  pomExitFullscreen();
 }
 
 function pomSessionComplete(elapsed) {
@@ -889,7 +794,7 @@ function pomSessionComplete(elapsed) {
 }
 
 document.getElementById('pomStart').addEventListener('click', () => {
-  if (pomRunning) { pomEnterFullscreen(); return; }
+  if (pomRunning) return;
   if (!pomActiveId && pomSubjects.length > 0) {
     const ok = confirm('No subject selected. Start untracked session anyway?');
     if (!ok) return;
@@ -901,25 +806,22 @@ document.getElementById('pomStart').addEventListener('click', () => {
       const liveSubj = pomSubjects.find(s => s.id === pomActiveId);
       if (liveSubj) pomLiveOffset = pomElapsed;
       renderPomStats();
-      pomFsRefreshStats();
     } else {
       pomSessionComplete(pomElapsed);
-      pomExitFullscreen();
     }
   }, 1000);
-  pomEnterFullscreen();
 });
 
 document.getElementById('pomReset').addEventListener('click', () => {
   clearInterval(pomTimer);
-  pomRunning = false; pomTimer = null; pomElapsed = 0; pomLiveOffset = 0;
+  pomRunning = false; pomElapsed = 0; pomLiveOffset = 0;
   pomTime = pomFull; pomUpdateRing(); renderPomStats();
 });
 
 document.getElementById('pomSkip').addEventListener('click', () => {
   if (!pomRunning && pomElapsed === 0) return;
   const elapsed = pomElapsed > 0 ? pomElapsed : pomFull - pomTime;
-  clearInterval(pomTimer); pomRunning = false; pomTimer = null;
+  clearInterval(pomTimer); pomRunning = false;
   pomSessionComplete(elapsed);
 });
 
