@@ -2613,4 +2613,4 @@ window.quickStartSubject = quickStartSubject
 window.openSubjFolderCustomise = openSubjFolderCustomise
 window.calRender = calRender
 window.examCalShowDay = examCalShowDay
-})();
+})()
