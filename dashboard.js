@@ -2,7 +2,8 @@
 // CONFIGURATION
 // ═════════════════════════════════════════════
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+(async () => {
+const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2')
 
 const supabase = createClient(
   'https://fcoahfwvrpgkrchcaeft.supabase.co',
@@ -2612,3 +2613,4 @@ window.quickStartSubject = quickStartSubject
 window.openSubjFolderCustomise = openSubjFolderCustomise
 window.calRender = calRender
 window.examCalShowDay = examCalShowDay
+})();
