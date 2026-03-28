@@ -5,16 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tangent — Study Smarter</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
-  <link rel="manifest" href="/Tangent-Website/manifest.json">
-<meta name="theme-color" content="#ffffff">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Tangent">
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/Tangent-Website/sw.js')
-  }
-</script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Tangent">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+    }
+  </script>
   <style>
     :root {
       --ink:        #d4e8f8;
@@ -32,9 +31,7 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     html { scroll-behavior: smooth; }
-
     body {
       background: var(--bg);
       color: var(--ink);
@@ -58,7 +55,6 @@
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--rule);
     }
-
     .logo {
       font-family: 'Playfair Display', serif;
       font-weight: 700;
@@ -68,7 +64,6 @@
       text-decoration: none;
     }
     .logo span { color: var(--cyan); }
-
     .nav-center {
       display: flex;
       list-style: none;
@@ -80,9 +75,7 @@
     }
     .nav-center li { cursor: pointer; transition: color 0.2s; }
     .nav-center li:hover { color: var(--accent); }
-
     .nav-right { display: flex; gap: 0.8rem; align-items: center; }
-
     .btn-ghost {
       padding: 0.42rem 1.1rem;
       border-radius: 4px;
@@ -97,7 +90,6 @@
       letter-spacing: 0.03em;
     }
     .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
     .btn-primary {
       padding: 0.42rem 1.2rem;
       border-radius: 4px;
@@ -130,8 +122,6 @@
       position: relative;
       overflow: hidden;
     }
-
-    /* Subtle grid background like Casio keypad grid */
     .hero::before {
       content: '';
       position: absolute;
@@ -142,8 +132,6 @@
       background-size: 48px 48px;
       pointer-events: none;
     }
-
-    /* Glow blob */
     .hero::after {
       content: '';
       position: absolute;
@@ -155,7 +143,6 @@
       background: radial-gradient(ellipse, rgba(59,158,255,0.12) 0%, transparent 70%);
       pointer-events: none;
     }
-
     .hero-badge {
       display: inline-flex;
       align-items: center;
@@ -172,7 +159,6 @@
       position: relative;
       z-index: 1;
     }
-
     .hero-badge-dot {
       width: 6px; height: 6px;
       background: var(--cyan);
@@ -180,12 +166,10 @@
       box-shadow: 0 0 6px var(--cyan);
       animation: pulse 2s ease-in-out infinite;
     }
-
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(0.8); }
     }
-
     .hero h1 {
       font-family: 'Playfair Display', serif;
       font-size: clamp(2.8rem, 6vw, 5rem);
@@ -198,12 +182,7 @@
       position: relative;
       z-index: 1;
     }
-
-    .hero h1 em {
-      font-style: normal;
-      color: var(--accent);
-    }
-
+    .hero h1 em { font-style: normal; color: var(--accent); }
     .hero-sub {
       font-size: 1.1rem;
       color: var(--ink-light);
@@ -213,7 +192,6 @@
       z-index: 1;
       font-style: italic;
     }
-
     .hero-ctas {
       display: flex;
       gap: 1rem;
@@ -222,7 +200,6 @@
       position: relative;
       z-index: 1;
     }
-
     .btn-hero {
       padding: 0.8rem 2rem;
       border-radius: 5px;
@@ -233,7 +210,6 @@
       transition: all 0.2s;
       letter-spacing: 0.02em;
     }
-
     .btn-hero-filled {
       background: var(--accent);
       color: white;
@@ -245,16 +221,12 @@
       transform: translateY(-2px);
       box-shadow: 0 8px 30px rgba(59,158,255,0.4);
     }
-
     .btn-hero-outline {
       background: transparent;
       color: var(--ink-light);
       border: 1px solid var(--rule);
     }
-    .btn-hero-outline:hover {
-      border-color: var(--ink-light);
-      color: var(--ink);
-    }
+    .btn-hero-outline:hover { border-color: var(--ink-light); color: var(--ink); }
 
     /* ── STATS STRIP ── */
     .stats-strip {
@@ -267,11 +239,7 @@
       gap: 4rem;
       flex-wrap: wrap;
     }
-
-    .stat {
-      text-align: center;
-    }
-
+    .stat { text-align: center; }
     .stat-num {
       font-family: 'Playfair Display', serif;
       font-size: 1.8rem;
@@ -281,7 +249,6 @@
       line-height: 1;
       margin-bottom: 0.3rem;
     }
-
     .stat-label {
       font-size: 0.75rem;
       letter-spacing: 0.1em;
@@ -295,7 +262,6 @@
       margin: 0 auto;
       padding: 5rem 3rem;
     }
-
     .section-label {
       font-size: 0.72rem;
       letter-spacing: 0.14em;
@@ -303,7 +269,6 @@
       color: var(--cyan);
       margin-bottom: 0.8rem;
     }
-
     .section-title {
       font-family: 'Playfair Display', serif;
       font-size: clamp(1.8rem, 3vw, 2.6rem);
@@ -314,7 +279,6 @@
       line-height: 1.2;
       margin-bottom: 1rem;
     }
-
     .section-sub {
       color: var(--ink-muted);
       font-size: 0.95rem;
@@ -329,7 +293,6 @@
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.2rem;
     }
-
     .feature-card {
       background: var(--bg-card);
       border: 1px solid var(--rule);
@@ -339,19 +302,12 @@
       transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
       cursor: default;
     }
-
     .feature-card:hover {
       border-top-color: var(--accent);
       transform: translateY(-4px);
       box-shadow: 0 12px 40px rgba(0,0,0,0.3);
     }
-
-    .feature-icon {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      display: block;
-    }
-
+    .feature-icon { font-size: 1.5rem; margin-bottom: 1rem; display: block; }
     .feature-card h3 {
       font-family: 'Playfair Display', serif;
       font-size: 1.1rem;
@@ -359,12 +315,7 @@
       color: var(--ink);
       margin-bottom: 0.5rem;
     }
-
-    .feature-card p {
-      font-size: 0.88rem;
-      color: var(--ink-muted);
-      line-height: 1.6;
-    }
+    .feature-card p { font-size: 0.88rem; color: var(--ink-muted); line-height: 1.6; }
 
     /* ── BIG FEATURE ROW ── */
     .big-feature {
@@ -376,12 +327,9 @@
       max-width: 1100px;
       margin: 0 auto;
     }
-
     .big-feature.reverse { direction: rtl; }
     .big-feature.reverse > * { direction: ltr; }
-
     .big-feature-text .section-label { margin-bottom: 0.6rem; }
-
     .big-feature-text h2 {
       font-family: 'Playfair Display', serif;
       font-size: 2rem;
@@ -391,29 +339,9 @@
       line-height: 1.2;
       margin-bottom: 1rem;
     }
-
-    .big-feature-text p {
-      color: var(--ink-light);
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
-      line-height: 1.7;
-    }
-
-    .feature-bullets {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .feature-bullets li {
-      display: flex;
-      align-items: center;
-      gap: 0.7rem;
-      font-size: 0.88rem;
-      color: var(--ink-light);
-    }
-
+    .big-feature-text p { color: var(--ink-light); font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.7; }
+    .feature-bullets { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+    .feature-bullets li { display: flex; align-items: center; gap: 0.7rem; font-size: 0.88rem; color: var(--ink-light); }
     .feature-bullets li::before {
       content: '';
       width: 6px; height: 6px;
@@ -432,7 +360,6 @@
       position: relative;
       overflow: hidden;
     }
-
     .preview-box::before {
       content: '';
       position: absolute;
@@ -440,7 +367,6 @@
       height: 2px;
       background: linear-gradient(90deg, var(--accent), var(--cyan));
     }
-
     .preview-titlebar {
       display: flex;
       align-items: center;
@@ -449,47 +375,14 @@
       padding-bottom: 0.8rem;
       border-bottom: 1px solid var(--rule);
     }
-
-    .preview-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-    }
-
-    .preview-mini-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.7rem;
-    }
-
-    .preview-mini-card {
-      background: var(--bg-card);
-      border: 1px solid var(--rule);
-      border-radius: 6px;
-      padding: 1rem;
-    }
-
-    .preview-mini-label {
-      font-size: 0.65rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      margin-bottom: 0.4rem;
-    }
-
-    .preview-mini-val {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--cyan);
-      text-shadow: 0 0 10px rgba(0,208,240,0.3);
-    }
+    .preview-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .preview-mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .preview-mini-card { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 6px; padding: 1rem; }
+    .preview-mini-label { font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 0.4rem; }
+    .preview-mini-val { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: var(--cyan); text-shadow: 0 0 10px rgba(0,208,240,0.3); }
 
     /* ── SUBJECTS SECTION ── */
-    .subjects-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 0.8rem;
-    }
-
+    .subjects-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; }
     .subject-pill {
       background: var(--bg-card);
       border: 1px solid var(--rule);
@@ -499,21 +392,9 @@
       transition: all 0.2s;
       cursor: pointer;
     }
-
-    .subject-pill:hover {
-      border-color: var(--accent);
-      box-shadow: 0 4px 20px rgba(59,158,255,0.15);
-      transform: translateY(-2px);
-    }
-
+    .subject-pill:hover { border-color: var(--accent); box-shadow: 0 4px 20px rgba(59,158,255,0.15); transform: translateY(-2px); }
     .subject-pill-icon { font-size: 1.5rem; display: block; margin-bottom: 0.4rem; }
-
-    .subject-pill-name {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--ink-light);
-      letter-spacing: 0.02em;
-    }
+    .subject-pill-name { font-size: 0.8rem; font-weight: 600; color: var(--ink-light); letter-spacing: 0.02em; }
 
     /* ── CTA SECTION ── */
     .cta-section {
@@ -525,7 +406,6 @@
       position: relative;
       overflow: hidden;
     }
-
     .cta-section::before {
       content: '';
       position: absolute;
@@ -535,27 +415,8 @@
       background: radial-gradient(ellipse, rgba(59,158,255,0.1), transparent 70%);
       pointer-events: none;
     }
-
-    .cta-section h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.4rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--ink);
-      margin-bottom: 1rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    .cta-section p {
-      color: var(--ink-muted);
-      font-size: 1rem;
-      margin-bottom: 2rem;
-      position: relative;
-      z-index: 1;
-      font-style: italic;
-    }
-
+    .cta-section h2 { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 700; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 1rem; position: relative; z-index: 1; }
+    .cta-section p { color: var(--ink-muted); font-size: 1rem; margin-bottom: 2rem; position: relative; z-index: 1; font-style: italic; }
     .cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
 
     /* ── FOOTER ── */
@@ -569,25 +430,11 @@
       flex-wrap: wrap;
       gap: 1rem;
     }
-
     footer .logo { font-size: 1.1rem; }
-
-    .footer-links {
-      display: flex;
-      gap: 2rem;
-      list-style: none;
-      font-size: 0.78rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-    }
+    .footer-links { display: flex; gap: 2rem; list-style: none; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-muted); }
     .footer-links li { cursor: pointer; transition: color 0.2s; }
     .footer-links li:hover { color: var(--ink-light); }
-
-    .footer-copy {
-      font-size: 0.75rem;
-      color: var(--ink-muted);
-    }
+    .footer-copy { font-size: 0.75rem; color: var(--ink-muted); }
 
     /* ── AUTH MODAL ── */
     .modal-overlay {
@@ -603,12 +450,7 @@
       pointer-events: none;
       transition: opacity 0.2s;
     }
-
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
     .modal {
       background: var(--bg-card);
       border: 1px solid var(--rule);
@@ -621,130 +463,26 @@
       transform: translateY(20px);
       transition: transform 0.25s;
     }
-
-    .modal-overlay.open .modal {
-      transform: translateY(0);
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 1rem; right: 1rem;
-      background: none;
-      border: none;
-      color: var(--ink-muted);
-      font-size: 1.2rem;
-      cursor: pointer;
-      line-height: 1;
-      transition: color 0.15s;
-    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--ink-muted); font-size: 1.2rem; cursor: pointer; line-height: 1; transition: color 0.15s; }
     .modal-close:hover { color: var(--ink); }
-
-    .modal h2 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--ink);
-      margin-bottom: 0.3rem;
-    }
-
-    .modal-sub {
-      font-size: 0.85rem;
-      color: var(--ink-muted);
-      margin-bottom: 1.8rem;
-      font-style: italic;
-    }
-
-    .modal-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--rule);
-      margin-bottom: 1.8rem;
-    }
-
-    .modal-tab {
-      flex: 1;
-      padding: 0.6rem;
-      text-align: center;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--ink-muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
-      transition: all 0.15s;
-      font-family: 'Source Serif 4', serif;
-      background: none;
-      border-left: none;
-      border-right: none;
-      border-top: none;
-    }
-
-    .modal-tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-
-    .modal-field {
-      margin-bottom: 1rem;
-    }
-
-    .modal-field label {
-      display: block;
-      font-size: 0.78rem;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      margin-bottom: 0.4rem;
-    }
-
-    .modal-field input {
-      width: 100%;
-      padding: 0.6rem 0.9rem;
-      border-radius: 4px;
-      border: 1px solid var(--rule);
-      background: var(--bg-inset);
-      font-family: 'Source Serif 4', serif;
-      font-size: 0.9rem;
-      color: var(--ink);
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .modal-field input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59,158,255,0.1);
-    }
-
-    .modal-submit {
-      width: 100%;
-      padding: 0.75rem;
-      border-radius: 4px;
-      border: none;
-      background: var(--accent);
-      color: white;
-      font-family: 'Source Serif 4', serif;
-      font-size: 0.92rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      margin-top: 0.5rem;
-    }
-
-    .modal-submit:hover {
-      background: var(--accent-dark);
-      box-shadow: 0 4px 16px rgba(59,158,255,0.3);
-    }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 600; color: var(--ink); margin-bottom: 0.3rem; }
+    .modal-sub { font-size: 0.85rem; color: var(--ink-muted); margin-bottom: 1.8rem; font-style: italic; }
+    .modal-tabs { display: flex; border-bottom: 1px solid var(--rule); margin-bottom: 1.8rem; }
+    .modal-tab { flex: 1; padding: 0.6rem; text-align: center; font-size: 0.82rem; font-weight: 600; color: var(--ink-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; font-family: 'Source Serif 4', serif; background: none; border-left: none; border-right: none; border-top: none; }
+    .modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .modal-field { margin-bottom: 1rem; }
+    .modal-field label { display: block; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 0.4rem; }
+    .modal-field input { width: 100%; padding: 0.6rem 0.9rem; border-radius: 4px; border: 1px solid var(--rule); background: var(--bg-inset); font-family: 'Source Serif 4', serif; font-size: 0.9rem; color: var(--ink); outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+    .modal-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59,158,255,0.1); }
+    .modal-submit { width: 100%; padding: 0.75rem; border-radius: 4px; border: none; background: var(--accent); color: white; font-family: 'Source Serif 4', serif; font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 0.5rem; }
+    .modal-submit:hover { background: var(--accent-dark); box-shadow: 0 4px 16px rgba(59,158,255,0.3); }
+    .modal-error { font-size: 0.82rem; color: #ff6b6b; margin-top: 0.6rem; text-align: center; min-height: 1.2em; }
+    .modal-success { font-size: 0.82rem; color: var(--green); margin-top: 0.6rem; text-align: center; min-height: 1.2em; }
 
     /* ── ANIMATIONS ── */
-    .fade-up {
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-    }
-
-    .fade-up.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    .fade-up { opacity: 0; transform: translateY(24px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
 
     @media (max-width: 768px) {
       .big-feature { grid-template-columns: 1fr; gap: 2rem; }
@@ -777,8 +515,7 @@
     <div class="hero-badge">
       <span class="hero-badge-dot"></span>
       Free for all students
-      <button class ="btn-hero btn-hero-outline" onclick="window.location.href='dashboard.html'">Test Dashboard</button>
-      
+      <button class="btn-hero btn-hero-outline" onclick="window.location.href='dashboard.html'">Test Dashboard</button>
     </div>
     <h1>The study dashboard<br>built for <em>exam season</em></h1>
     <p class="hero-sub">Pomodoro timer, grade tracker, to-do list, and smart revision tools — all in one place.</p>
@@ -790,22 +527,10 @@
 
   <!-- STATS STRIP -->
   <div class="stats-strip">
-    <div class="stat">
-      <span class="stat-num">A lot of</span>
-      <span class="stat-label">Active Students</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">98%</span>
-      <span class="stat-label">Would Recommend</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">5</span>
-      <span class="stat-label">Built-in Tools</span>
-    </div>
-    <div class="stat">
-      <span class="stat-num">Free</span>
-      <span class="stat-label">Always</span>
-    </div>
+    <div class="stat"><span class="stat-num">A lot of</span><span class="stat-label">Active Students</span></div>
+    <div class="stat"><span class="stat-num">98%</span><span class="stat-label">Would Recommend</span></div>
+    <div class="stat"><span class="stat-num">5</span><span class="stat-label">Built-in Tools</span></div>
+    <div class="stat"><span class="stat-num">Free</span><span class="stat-label">Always</span></div>
   </div>
 
   <!-- FEATURES GRID -->
@@ -813,42 +538,17 @@
     <p class="section-label fade-up">What's inside</p>
     <h2 class="section-title fade-up">Everything you need. Nothing you don't.</h2>
     <p class="section-sub fade-up">Tangent keeps your study sessions focused, organised and measurable.</p>
-
     <div class="features-grid">
-      <div class="feature-card fade-up">
-        <span class="feature-icon">⏱</span>
-        <h3>Pomodoro Timer</h3>
-        <p>25-minute focus sessions with a visual ring counter. Work in sprints, not marathons.</p>
-      </div>
-      <div class="feature-card fade-up">
-        <span class="feature-icon">📝</span>
-        <h3>To-Do List</h3>
-        <p>Add, rename and clear tasks as you go. Keep today's work visible at all times.</p>
-      </div>
-      <div class="feature-card fade-up">
-        <span class="feature-icon">📊</span>
-        <h3>Grade Tracker</h3>
-        <p>Log subject scores and watch your average. Know exactly where you need to improve.</p>
-      </div>
-      <div class="feature-card fade-up">
-        <span class="feature-icon">📅</span>
-        <h3>Calendar</h3>
-        <p>Stay oriented through the term. Today is always highlighted so you never lose track.</p>
-      </div>
-      <div class="feature-card fade-up">
-        <span class="feature-icon">📘</span>
-        <h3>Smart Revision Publisher</h3>
-        <p>Upload photos of your notes and generate a structured PDF revision book automatically.</p>
-      </div>
-      <div class="feature-card fade-up">
-        <span class="feature-icon">🕐</span>
-        <h3>Live Clock</h3>
-        <p>12H or 24H display always visible. Toggle with one click, just like switching your Casio.</p>
-      </div>
+      <div class="feature-card fade-up"><span class="feature-icon">⏱</span><h3>Pomodoro Timer</h3><p>25-minute focus sessions with a visual ring counter. Work in sprints, not marathons.</p></div>
+      <div class="feature-card fade-up"><span class="feature-icon">📝</span><h3>To-Do List</h3><p>Add, rename and clear tasks as you go. Keep today's work visible at all times.</p></div>
+      <div class="feature-card fade-up"><span class="feature-icon">📊</span><h3>Grade Tracker</h3><p>Log subject scores and watch your average. Know exactly where you need to improve.</p></div>
+      <div class="feature-card fade-up"><span class="feature-icon">📅</span><h3>Calendar</h3><p>Stay oriented through the term. Today is always highlighted so you never lose track.</p></div>
+      <div class="feature-card fade-up"><span class="feature-icon">📘</span><h3>Smart Revision Publisher</h3><p>Upload photos of your notes and generate a structured PDF revision book automatically.</p></div>
+      <div class="feature-card fade-up"><span class="feature-icon">🕐</span><h3>Live Clock</h3><p>12H or 24H display always visible. Toggle with one click, just like switching your Casio.</p></div>
     </div>
   </section>
 
-  <!-- BIG FEATURE — Dashboard Preview -->
+  <!-- BIG FEATURE -->
   <div class="big-feature">
     <div class="big-feature-text fade-up">
       <p class="section-label">Your command centre</p>
@@ -869,31 +569,9 @@
         <span style="font-size:0.72rem;color:var(--ink-muted);margin-left:0.5rem;letter-spacing:0.06em">tangent / dashboard</span>
       </div>
       <div class="preview-mini-cards">
-        <div class="preview-mini-card">
-          <div class="preview-mini-label">⏱ Pomodoro</div>
-          <div class="preview-mini-val">24:13</div>
-          <div style="margin-top:0.5rem;height:4px;background:var(--rule);border-radius:2px">
-            <div style="width:35%;height:100%;background:var(--accent);border-radius:2px;box-shadow:0 0 6px rgba(59,158,255,0.5)"></div>
-          </div>
-        </div>
-        <div class="preview-mini-card">
-          <div class="preview-mini-label">📊 Grades</div>
-          <div class="preview-mini-val" style="color:var(--green)">87%</div>
-          <div style="font-size:0.7rem;color:var(--ink-muted);margin-top:0.2rem">Biology</div>
-        </div>
-        <div class="preview-mini-card" style="grid-column:1/-1">
-          <div class="preview-mini-label">📝 Tasks today</div>
-          <div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.4rem">
-            <div style="font-size:0.78rem;color:var(--ink-light);display:flex;align-items:center;gap:0.5rem">
-              <div style="width:8px;height:8px;border:1px solid var(--accent);border-radius:2px;flex-shrink:0"></div>
-              Finish Maths past paper
-            </div>
-            <div style="font-size:0.78rem;color:var(--ink-muted);display:flex;align-items:center;gap:0.5rem;text-decoration:line-through">
-              <div style="width:8px;height:8px;background:var(--accent);border-radius:2px;flex-shrink:0"></div>
-              Read Chemistry chapter 4
-            </div>
-          </div>
-        </div>
+        <div class="preview-mini-card"><div class="preview-mini-label">⏱ Pomodoro</div><div class="preview-mini-val">24:13</div><div style="margin-top:0.5rem;height:4px;background:var(--rule);border-radius:2px"><div style="width:35%;height:100%;background:var(--accent);border-radius:2px;box-shadow:0 0 6px rgba(59,158,255,0.5)"></div></div></div>
+        <div class="preview-mini-card"><div class="preview-mini-label">📊 Grades</div><div class="preview-mini-val" style="color:var(--green)">87%</div><div style="font-size:0.7rem;color:var(--ink-muted);margin-top:0.2rem">Biology</div></div>
+        <div class="preview-mini-card" style="grid-column:1/-1"><div class="preview-mini-label">📝 Tasks today</div><div style="display:flex;flex-direction:column;gap:0.3rem;margin-top:0.4rem"><div style="font-size:0.78rem;color:var(--ink-light);display:flex;align-items:center;gap:0.5rem"><div style="width:8px;height:8px;border:1px solid var(--accent);border-radius:2px;flex-shrink:0"></div>Finish Maths past paper</div><div style="font-size:0.78rem;color:var(--ink-muted);display:flex;align-items:center;gap:0.5rem;text-decoration:line-through"><div style="width:8px;height:8px;background:var(--accent);border-radius:2px;flex-shrink:0"></div>Read Chemistry chapter 4</div></div></div>
       </div>
     </div>
   </div>
@@ -929,10 +607,7 @@
   <footer>
     <a class="logo" href="#">Tangent<span>.</span></a>
     <ul class="footer-links">
-      <li>About</li>
-      <li>Contact</li>
-      <li>Privacy</li>
-      <li>Terms</li>
+      <li>About</li><li>Contact</li><li>Privacy</li><li>Terms</li>
     </ul>
     <span class="footer-copy">© 2026 Tangent. Free forever.</span>
   </footer>
@@ -943,78 +618,118 @@
       <button class="modal-close" onclick="closeModal()">✕</button>
       <h2 id="modalTitle">Welcome back</h2>
       <p class="modal-sub" id="modalSub">Sign in to your Tangent account</p>
-
       <div class="modal-tabs">
         <button class="modal-tab active" id="tabLogin" onclick="switchTab('login')">Sign in</button>
         <button class="modal-tab" id="tabSignup" onclick="switchTab('signup')">Sign up</button>
       </div>
 
       <div id="loginForm">
-        <div class="modal-field">
-          <label>Email</label>
-          <input type="email" placeholder="you@school.ac.uk" />
-        </div>
-        <div class="modal-field">
-          <label>Password</label>
-          <input type="password" placeholder="••••••••" />
-        </div>
-        <button class="modal-submit" onclick="goToDashboard()">Sign in →</button>
+        <div class="modal-field"><label>Email</label><input id="loginEmail" type="email" placeholder="you@school.ac.uk" /></div>
+        <div class="modal-field"><label>Password</label><input id="loginPassword" type="password" placeholder="••••••••" /></div>
+        <button class="modal-submit" id="loginBtn">Sign in →</button>
+        <div class="modal-error" id="loginError"></div>
       </div>
 
       <div id="signupForm" style="display:none">
-        <div class="modal-field">
-          <label>Name</label>
-          <input type="text" placeholder="Your name" />
-        </div>
-        <div class="modal-field">
-          <label>Email</label>
-          <input type="email" placeholder="you@school.ac.uk" />
-        </div>
-        <div class="modal-field">
-          <label>Password</label>
-          <input type="password" placeholder="Choose a password" />
-        </div>
-        <button class="modal-submit" onclick="goToDashboard()">Create account →</button>
+        <div class="modal-field"><label>Name</label><input id="signupName" type="text" placeholder="Your name" /></div>
+        <div class="modal-field"><label>Email</label><input id="signupEmail" type="email" placeholder="you@school.ac.uk" /></div>
+        <div class="modal-field"><label>Password</label><input id="signupPassword" type="password" placeholder="Choose a password" /></div>
+        <button class="modal-submit" id="signupBtn">Create account →</button>
+        <div class="modal-error" id="signupError"></div>
+        <div class="modal-success" id="signupSuccess"></div>
       </div>
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+    const supabase = createClient(
+      'https://fcoahfwvrpgkrchcaeft.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjb2FoZnd2cnBna3JjaGNhZWZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjQ1ODYsImV4cCI6MjA5MDIwMDU4Nn0.y849sbQ4-DW1g-kqIMvRirmFN8E8sCLoF-YmzftuLNk'
+    )
+
+    // ── REDIRECT IF ALREADY LOGGED IN ──
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) window.location.href = 'dashboard.html'
+
     // ── MODAL ──
-    function openModal(tab) {
-      document.getElementById('authModal').classList.add('open');
-      switchTab(tab);
+    window.openModal = (tab) => {
+      document.getElementById('authModal').classList.add('open')
+      switchTab(tab)
     }
-    function closeModal() {
-      document.getElementById('authModal').classList.remove('open');
+    window.closeModal = () => {
+      document.getElementById('authModal').classList.remove('open')
     }
-    function switchTab(tab) {
-      const isLogin = tab === 'login';
-      document.getElementById('tabLogin').classList.toggle('active', isLogin);
-      document.getElementById('tabSignup').classList.toggle('active', !isLogin);
-      document.getElementById('loginForm').style.display = isLogin ? '' : 'none';
-      document.getElementById('signupForm').style.display = isLogin ? 'none' : '';
-      document.getElementById('modalTitle').textContent = isLogin ? 'Welcome back' : 'Create account';
-      document.getElementById('modalSub').textContent = isLogin ? 'Sign in to your Tangent account' : 'Start studying smarter today';
-    }
-    function goToDashboard() {
-      window.location.href = 'dashboard.html';
+    window.switchTab = (tab) => {
+      const isLogin = tab === 'login'
+      document.getElementById('tabLogin').classList.toggle('active', isLogin)
+      document.getElementById('tabSignup').classList.toggle('active', !isLogin)
+      document.getElementById('loginForm').style.display = isLogin ? '' : 'none'
+      document.getElementById('signupForm').style.display = isLogin ? 'none' : ''
+      document.getElementById('modalTitle').textContent = isLogin ? 'Welcome back' : 'Create account'
+      document.getElementById('modalSub').textContent = isLogin ? 'Sign in to your Tangent account' : 'Start studying smarter today'
     }
     document.getElementById('authModal').addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
+      if (e.target === this) closeModal()
+    })
+
+    // ── LOGIN ──
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const email = document.getElementById('loginEmail').value
+      const password = document.getElementById('loginPassword').value
+      const btn = document.getElementById('loginBtn')
+      const err = document.getElementById('loginError')
+      err.textContent = ''
+      btn.textContent = 'Signing in...'
+      btn.disabled = true
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        err.textContent = error.message
+        btn.textContent = 'Sign in →'
+        btn.disabled = false
+      } else {
+        window.location.href = 'dashboard.html'
+      }
+    })
+
+    // ── SIGNUP ──
+    document.getElementById('signupBtn').addEventListener('click', async () => {
+      const name = document.getElementById('signupName').value
+      const email = document.getElementById('signupEmail').value
+      const password = document.getElementById('signupPassword').value
+      const btn = document.getElementById('signupBtn')
+      const err = document.getElementById('signupError')
+      const success = document.getElementById('signupSuccess')
+      err.textContent = ''
+      success.textContent = ''
+      btn.textContent = 'Creating account...'
+      btn.disabled = true
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: name } }
+      })
+      if (error) {
+        err.textContent = error.message
+        btn.textContent = 'Create account →'
+        btn.disabled = false
+      } else {
+        success.textContent = 'Check your email to confirm your account!'
+        btn.textContent = 'Create account →'
+        btn.disabled = false
+      }
+    })
 
     // ── SCROLL FADE ──
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry, i) => {
         if (entry.isIntersecting) {
-          setTimeout(() => entry.target.classList.add('visible'), i * 80);
+          setTimeout(() => entry.target.classList.add('visible'), i * 80)
         }
-      });
-    }, { threshold: 0.1 });
-
-    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+      })
+    }, { threshold: 0.1 })
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el))
   </script>
 </body>
 </html>
-
