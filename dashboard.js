@@ -27,9 +27,9 @@ let folders = [
   { id:1, name:'Pomodoro',  emoji:'⏱',  colour:'#539ec4', panel:'pomodoro', image: null },
   { id:2, name:'To-Do',     emoji:'📝',  colour:'#A9DEF9', panel:'todo',     image: null },
   { id:3, name:'Grades',    emoji:'📊',  colour:'#3aab6e', panel:'grades',   image: null },
-  { id:4, name:'Calendar',  emoji:'📅',  colour:'#e8a030', panel:'calendar', image: null },
-  { id:5, name:'Revision',  emoji:'📘',  colour:'#9b6fd4', panel:'revision', image: null },
-  { id:6, name:'Notes',     emoji:'📓',  colour:'#e8a030', panel:'notes',    image: null },
+  { id:4, name:'Revision',  emoji:'📘',  colour:'#9b6fd4', panel:'revision', image: null },
+  { id:5, name:'Notes',     emoji:'📓',  colour:'#e8a030', panel:'notes',    image: null },
+  { id:6, name:'Exams',     emoji:'🎓',  colour:'#e05050', panel:'exams',    image: null },
 ];
 
 let nextId = 7;
@@ -177,7 +177,6 @@ function buildFolderEl(f, grid, isSubject) {
   grid.appendChild(div);
 }
 
-// Subject folder context menu
 let ctxSubjTarget = null;
 
 function showSubjCtx(e, subjId) {
@@ -258,7 +257,9 @@ function openFolder(id) {
   document.getElementById('pathLabel').textContent   = f.name;
   setActiveSb(f.panel);
   showDetail(f);
-  if (f.panel === 'notes') renderNotesSubjectView();
+  if (f.panel === 'notes')    renderNotesSubjectView();
+  if (f.panel === 'exams')    renderExams();
+  if (f.panel === 'calendar') calRender();
 }
 
 function selectFolder(id) {
@@ -772,13 +773,102 @@ function renderPomDetail() {
   col.appendChild(wrap);
 }
 
+const FS_CIRCUM = 741.42;
+
 function pomUpdateRing() {
-  document.getElementById('pomDisplay').textContent = pomFmt(pomTime);
+  const fmt = pomFmt(pomTime);
+  const ratio = pomTime / pomFull;
+  const offset = FS_CIRCUM * (1 - ratio);
+
+  document.getElementById('pomDisplay').textContent = fmt;
   const circle = document.querySelector('#pomRing .progress');
   if (circle) {
     circle.style.strokeDasharray  = CIRCUM;
-    circle.style.strokeDashoffset = CIRCUM * (1 - pomTime / pomFull);
+    circle.style.strokeDashoffset = CIRCUM * (1 - ratio);
   }
+
+  const fsDisplay = document.getElementById('pomFsDisplay');
+  const fsCircle  = document.getElementById('pomFsProgressCircle');
+  if (fsDisplay) fsDisplay.textContent = fmt;
+  if (fsCircle)  fsCircle.style.strokeDashoffset = offset;
+
+  const isBreak = pomFull <= 15 * 60;
+  const labelTxt = isBreak ? 'break' : 'focus';
+  document.getElementById('pomRingLabel').textContent = labelTxt;
+  const fsLabel = document.getElementById('pomFsLabel');
+  if (fsLabel) fsLabel.textContent = labelTxt;
+}
+
+function pomEnterFullscreen() {
+  const subj = pomSubjects.find(s => s.id === pomActiveId);
+  const label = document.getElementById('pomFsSubject');
+  if (label) label.textContent = subj ? `📚 ${subj.name}` : '📚 Untracked Session';
+  pomFsRefreshStats();
+  document.getElementById('pomFullscreen').classList.add('active');
+  document.getElementById('pomFsToggle').textContent = '⏸ Pause';
+}
+
+function pomExitFullscreen() {
+  document.getElementById('pomFullscreen').classList.remove('active');
+}
+
+function pomFsRefreshStats() {
+  const todayTotal = pomSubjects.reduce((sum, s) => {
+    return sum + s.sessions
+      .filter(ses => ses.date === todayStr())
+      .reduce((a, ses) => a + ses.dur, 0);
+  }, 0);
+  const h = Math.floor(todayTotal / 3600);
+  const m = Math.floor((todayTotal % 3600) / 60);
+  const totalSessions = pomSubjects.reduce((sum, s) =>
+    sum + s.sessions.filter(ses => ses.date === todayStr()).length, 0);
+  const hEl = document.getElementById('pomFsHours');
+  const mEl = document.getElementById('pomFsMins');
+  const sEl = document.getElementById('pomFsSessions');
+  if (hEl) hEl.textContent = h;
+  if (mEl) mEl.textContent = m;
+  if (sEl) sEl.textContent = totalSessions;
+}
+
+function pomFsDoToggle() {
+  const btn = document.getElementById('pomFsToggle');
+  if (pomRunning) {
+    clearInterval(pomTimer);
+    pomRunning = false;
+    pomTimer = null;
+    if (btn) btn.textContent = '▶ Resume';
+  } else {
+    pomRunning = true;
+    pomTimer = setInterval(() => {
+      if (pomTime > 0) {
+        pomTime--; pomElapsed++; pomUpdateRing();
+        const liveSubj = pomSubjects.find(s => s.id === pomActiveId);
+        if (liveSubj) pomLiveOffset = pomElapsed;
+        renderPomStats();
+        pomFsRefreshStats();
+      } else {
+        pomSessionComplete(pomElapsed);
+        pomExitFullscreen();
+      }
+    }, 1000);
+    if (btn) btn.textContent = '⏸ Pause';
+  }
+}
+
+function pomFsDoReset() {
+  clearInterval(pomTimer);
+  pomRunning = false; pomTimer = null;
+  pomElapsed = 0; pomLiveOffset = 0;
+  pomTime = pomFull;
+  pomUpdateRing(); renderPomStats();
+  pomExitFullscreen();
+}
+
+function pomFsDoSkip() {
+  const elapsed = pomElapsed > 0 ? pomElapsed : pomFull - pomTime;
+  clearInterval(pomTimer); pomRunning = false; pomTimer = null;
+  pomSessionComplete(elapsed);
+  pomExitFullscreen();
 }
 
 function pomSessionComplete(elapsed) {
@@ -794,7 +884,7 @@ function pomSessionComplete(elapsed) {
 }
 
 document.getElementById('pomStart').addEventListener('click', () => {
-  if (pomRunning) return;
+  if (pomRunning) { pomEnterFullscreen(); return; }
   if (!pomActiveId && pomSubjects.length > 0) {
     const ok = confirm('No subject selected. Start untracked session anyway?');
     if (!ok) return;
@@ -806,22 +896,25 @@ document.getElementById('pomStart').addEventListener('click', () => {
       const liveSubj = pomSubjects.find(s => s.id === pomActiveId);
       if (liveSubj) pomLiveOffset = pomElapsed;
       renderPomStats();
+      pomFsRefreshStats();
     } else {
       pomSessionComplete(pomElapsed);
+      pomExitFullscreen();
     }
   }, 1000);
+  pomEnterFullscreen();
 });
 
 document.getElementById('pomReset').addEventListener('click', () => {
   clearInterval(pomTimer);
-  pomRunning = false; pomElapsed = 0; pomLiveOffset = 0;
+  pomRunning = false; pomTimer = null; pomElapsed = 0; pomLiveOffset = 0;
   pomTime = pomFull; pomUpdateRing(); renderPomStats();
 });
 
 document.getElementById('pomSkip').addEventListener('click', () => {
   if (!pomRunning && pomElapsed === 0) return;
   const elapsed = pomElapsed > 0 ? pomElapsed : pomFull - pomTime;
-  clearInterval(pomTimer); pomRunning = false;
+  clearInterval(pomTimer); pomRunning = false; pomTimer = null;
   pomSessionComplete(elapsed);
 });
 
@@ -853,8 +946,10 @@ const addSubjectFn = () => {
   document.getElementById('pomAddSubjectForm').style.display = 'none';
   pomActiveId = newSubj2.id;
   renderPomTabs(); renderPomDetail(); updatePomBadge();
-  if (typeof renderSbSubjects === 'function') renderSbSubjects();
-  if (typeof renderNotesSubjectView === 'function') renderNotesSubjectView();
+  renderSbSubjects();
+  renderSubjectFolders();
+  renderRevSubjectPicker();
+  renderNotesSubjectView();
 };
 
 document.getElementById('pomSubjectConfirm').addEventListener('click', addSubjectFn);
@@ -862,7 +957,6 @@ document.getElementById('pomSubjectNameInput').addEventListener('keypress', e =>
 
 pomUpdateRing();
 renderPomStats();
-renderRevSubjectPicker();
 
 // ═════════════════════════════════════════════
 // TO-DO
@@ -943,25 +1037,41 @@ renderGrades();
 // ═════════════════════════════════════════════
 // CALENDAR
 // ═════════════════════════════════════════════
-function buildCalendar() {
-  const wd = document.getElementById('calWd'), days = document.getElementById('calDays'), mname = document.getElementById('calMonth');
-  const now = new Date(), yr = now.getFullYear(), mo = now.getMonth();
-  wd.innerHTML = '';
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
-    const div = document.createElement('div'); div.className = 'cal-wd'; div.textContent = d; wd.appendChild(div);
+let calYear  = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+function calRender() {
+  const grid  = document.getElementById('calDays');
+  const wdBar = document.getElementById('calWd');
+  const title = document.getElementById('calMonth');
+  if (!grid) return;
+
+  title.textContent = `${MONTHS[calMonth]} ${calYear}`;
+
+  wdBar.innerHTML = '';
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'cal-wd'; el.textContent = d; wdBar.appendChild(el);
   });
-  mname.textContent = `${MONTHS[mo]} ${yr}`;
-  days.innerHTML = '';
-  const firstDay = new Date(yr, mo, 1).getDay();
-  const lastDate = new Date(yr, mo+1, 0).getDate();
-  for (let i = 0; i < firstDay; i++) days.appendChild(document.createElement('div'));
+
+  grid.innerHTML = '';
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
+  const todayD   = new Date();
+
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement('div'); grid.appendChild(blank);
+  }
   for (let d = 1; d <= lastDate; d++) {
-    const div = document.createElement('div'); div.textContent = d;
-    if (d === now.getDate()) div.classList.add('today');
-    days.appendChild(div);
+    const cell = document.createElement('div');
+    cell.textContent = d;
+    const isToday = d === todayD.getDate() && calMonth === todayD.getMonth() && calYear === todayD.getFullYear();
+    if (isToday) cell.classList.add('today');
+    grid.appendChild(cell);
   }
 }
-buildCalendar();
+
+calRender();
 
 // ═════════════════════════════════════════════
 // SEARCH
@@ -970,109 +1080,6 @@ document.getElementById('searchInput').addEventListener('input', () => {
   if (document.getElementById('homeView').style.display === 'none') showHome();
   renderFolders();
 });
-
-// ═════════════════════════════════════════════
-// REVISION NOTES
-// ═════════════════════════════════════════════
-let revisionNotes  = [];
-let revNextNoteId  = 1;
-
-function renderRevSubjectPicker() {
-  ['revSubjectPicker','revFilterSubject'].forEach(id => {
-    const sel = document.getElementById(id); if (!sel) return;
-    const val = sel.value;
-    while (sel.options.length > 1) sel.remove(1);
-    pomSubjects.forEach(s => { const opt = document.createElement('option'); opt.value = s.name; opt.textContent = s.name; sel.appendChild(opt); });
-    sel.value = val;
-  });
-}
-
-function renderRevCategoryFilter() {
-  const sel = document.getElementById('revFilterCategory'); if (!sel) return;
-  const val = sel.value;
-  while (sel.options.length > 1) sel.remove(1);
-  const cats = [...new Set(revisionNotes.map(n => n.category).filter(Boolean))];
-  cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; sel.appendChild(opt); });
-  sel.value = val;
-}
-
-document.getElementById('noteUpload').addEventListener('change', e => {
-  const files = Array.from(e.target.files); if (!files.length) return;
-  const subjName  = document.getElementById('revSubjectPicker').value;
-  const category  = document.getElementById('revCategoryInput').value.trim();
-  const titleBase = document.getElementById('revTitleInput').value.trim();
-  const matchSubj = pomSubjects.find(s => s.name === subjName);
-  files.forEach((file, fi) => {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      revisionNotes.push({ id: revNextNoteId++, name: titleBase || file.name.replace(/\.[^/.]+$/, ''), type: file.type.includes('pdf') ? 'pdf' : 'image', data: ev.target.result, subject: subjName, subjId: matchSubj ? matchSubj.id : null, category, date: todayStr() });
-      if (fi === files.length - 1) {
-        renderRevNotesList(); renderRevSubjectPicker(); renderRevCategoryFilter();
-        document.getElementById('revTitleInput').value = '';
-        document.getElementById('revCategoryInput').value = '';
-        document.getElementById('noteUpload').value = '';
-        if (currentSubjectId) renderSubjectPanel(currentSubjectId);
-        renderNotesSubjectView(); // keep Notes panel in sync
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-});
-
-function renderRevNotesList() {
-  const container = document.getElementById('revNotesList'); if (!container) return;
-  const filterSubj = document.getElementById('revFilterSubject')?.value || '';
-  const filterCat  = document.getElementById('revFilterCategory')?.value || '';
-  const shown = revisionNotes.filter(n => {
-    if (filterSubj && n.subject !== filterSubj) return false;
-    if (filterCat  && n.category !== filterCat)  return false;
-    return true;
-  });
-  container.innerHTML = '';
-  const countEl = document.getElementById('revNoteCount');
-  if (countEl) countEl.textContent = `${shown.length} note${shown.length !== 1 ? 's' : ''}`;
-  if (shown.length === 0) { container.innerHTML = '<div style="font-size:0.78rem;color:var(--ink-muted);font-style:italic;padding:0.5rem 0">No notes yet — upload above</div>'; return; }
-  shown.forEach(n => {
-    const row = document.createElement('div'); row.className = 'rev-note-row';
-    const thumbHTML = n.type === 'image'
-      ? `<img class="rev-note-thumb" src="${n.data}" alt="${n.name}" />`
-      : n.type === 'written'
-        ? `<div class="rev-note-type-badge">✏️</div>`
-        : `<div class="rev-note-type-badge">📄</div>`;
-    const subjTag = n.subject ? `<span class="rev-note-tag subject">${n.subject}</span>` : '';
-    const catTag  = n.category ? `<span class="rev-note-tag category">${n.category}</span>` : '';
-    row.innerHTML = `
-      ${thumbHTML}
-      <div class="rev-note-meta">
-        <div class="rev-note-title">${n.name}</div>
-        <div class="rev-note-tags">${subjTag}${catTag}</div>
-        <div class="rev-note-date">${n.date}</div>
-      </div>
-      <div class="rev-note-actions">
-        <button class="rev-note-btn" onclick="viewNote(${n.id})">👁</button>
-        <button class="rev-note-btn del" onclick="deleteNote(${n.id})">🗑</button>
-      </div>
-    `;
-    container.appendChild(row);
-  });
-}
-
-window.viewNote = function(id) {
-  const n = revisionNotes.find(x => x.id === id); if (!n) return;
-  const win = window.open();
-  if (n.type === 'image') win.document.write(`<img src="${n.data}" style="max-width:100%;height:auto" />`);
-  else win.document.write(`<iframe src="${n.data}" style="width:100%;height:100vh;border:none"></iframe>`);
-};
-
-window.deleteNote = function(id) {
-  revisionNotes = revisionNotes.filter(x => x.id !== id);
-  renderRevNotesList(); renderRevCategoryFilter();
-  if (currentSubjectId) renderSubjectPanel(currentSubjectId);
-  renderNotesSubjectView();
-};
-
-document.getElementById('revFilterSubject')?.addEventListener('change',  renderRevNotesList);
-document.getElementById('revFilterCategory')?.addEventListener('change', renderRevNotesList);
 
 // ═════════════════════════════════════════════
 // SIDEBAR SUBJECTS
@@ -1104,7 +1111,7 @@ function renderSbSubjects() {
       pomSubjects = pomSubjects.filter(x => x.id !== s.id);
       if (currentSubjectId === s.id) { currentSubjectId = null; showHome(); }
       if (pomActiveId === s.id) { pomActiveId = null; updatePomBadge(); renderPomTabs(); }
-      renderSbSubjects(); renderPomStats();
+      renderSbSubjects(); renderPomStats(); renderSubjectFolders(); renderRevSubjectPicker();
     });
     list.appendChild(el);
   });
@@ -1129,7 +1136,10 @@ function confirmAddSubjectSidebar() {
   pomSubjects.push(newSubj);
   inp.value = '';
   document.getElementById('sbAddSubjectForm').style.display = 'none';
-  renderPomTabs(); renderSbSubjects(); renderRevSubjectPicker(); renderSubjectFolders();
+  renderPomTabs();
+  renderSbSubjects();
+  renderRevSubjectPicker();
+  renderSubjectFolders();
   renderNotesSubjectView();
   openSubjectPanel(newSubj.id);
 }
@@ -1160,6 +1170,215 @@ function openSubjectPanel(id) {
 }
 
 // ═════════════════════════════════════════════
+// REVISION NOTES
+// ═════════════════════════════════════════════
+let revisionNotes  = [];
+let revNextNoteId  = 1;
+
+function renderRevSubjectPicker() {
+  ['revSubjectPicker','revFilterSubject'].forEach(id => {
+    const sel = document.getElementById(id); if (!sel) return;
+    const val = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    pomSubjects.forEach(s => { const opt = document.createElement('option'); opt.value = s.name; opt.textContent = s.name; sel.appendChild(opt); });
+    sel.value = val;
+  });
+}
+
+function renderRevCategoryFilter() {
+  const sel = document.getElementById('revFilterCategory'); if (!sel) return;
+  const val = sel.value;
+  while (sel.options.length > 1) sel.remove(1);
+  const cats = [...new Set(revisionNotes.map(n => n.category).filter(Boolean))];
+  cats.forEach(c => { const opt = document.createElement('option'); opt.value = c; opt.textContent = c; sel.appendChild(opt); });
+  sel.value = val;
+}
+
+// ═════════════════════════════════════════════
+// LIGHTBOX — shared by Revision + Notes panels
+// ═════════════════════════════════════════════
+function revFullscreen(id) {
+  const n = revisionNotes.find(x => x.id === parseInt(id));
+  if (!n || n.type !== 'image') return;
+  // Remove any existing lightbox first
+  const existing = document.getElementById('revLightbox');
+  if (existing) existing.remove();
+
+  const box = document.createElement('div');
+  box.id = 'revLightbox';
+  box.style.cssText = [
+    'position:fixed','inset:0','z-index:3000',
+    'background:rgba(0,0,0,0.93)',
+    'display:flex','align-items:center','justify-content:center',
+    'cursor:zoom-out'
+  ].join(';');
+  box.addEventListener('click', () => box.remove());
+
+  const img = document.createElement('img');
+  img.src = n.data;
+  img.style.cssText = [
+    'max-width:95vw','max-height:95vh',
+    'width:auto','height:auto',
+    'object-fit:contain',
+    'border-radius:3px',
+    'box-shadow:0 8px 40px rgba(0,0,0,0.6)',
+    'display:block'
+  ].join(';');
+  // Stop click on image bubbling so only background click closes
+  img.addEventListener('click', e => e.stopPropagation());
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = [
+    'position:absolute','top:1rem','right:1.2rem',
+    'background:rgba(255,255,255,0.12)','border:none','color:white',
+    'font-size:1.3rem','width:36px','height:36px',
+    'border-radius:6px','cursor:pointer','line-height:1'
+  ].join(';');
+  closeBtn.addEventListener('click', e => { e.stopPropagation(); box.remove(); });
+
+  box.appendChild(img);
+  box.appendChild(closeBtn);
+  document.body.appendChild(box);
+}
+
+// Close lightbox on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const lb = document.getElementById('revLightbox');
+    if (lb) lb.remove();
+  }
+});
+
+function renderRevNotesList() {
+  const container = document.getElementById('revNotesList'); if (!container) return;
+  const filterSubj = document.getElementById('revFilterSubject')?.value || '';
+  const filterCat  = document.getElementById('revFilterCategory')?.value || '';
+  const shown = revisionNotes.filter(n => {
+    if (filterSubj && n.subject !== filterSubj) return false;
+    if (filterCat  && n.category !== filterCat)  return false;
+    return true;
+  });
+  container.innerHTML = '';
+  const countEl = document.getElementById('revNoteCount');
+  if (countEl) countEl.textContent = `${shown.length} note${shown.length !== 1 ? 's' : ''}`;
+  if (shown.length === 0) {
+    container.innerHTML = '<div style="font-size:0.78rem;color:var(--ink-muted);font-style:italic;padding:0.5rem 0">No notes yet — upload above</div>';
+    return;
+  }
+
+  shown.forEach(n => {
+    const card = document.createElement('div');
+    card.className = 'rev-index-card';
+
+    const subjTag = n.subject  ? `<span class="rev-note-tag subject">${n.subject}</span>`   : '';
+    const catTag  = n.category ? `<span class="rev-note-tag category">${n.category}</span>` : '';
+
+    let bodyHTML = '';
+    if (n.type === 'image') {
+      // ── Natural size, no fixed height box, click to fullscreen ──
+      bodyHTML = `
+        <div class="rev-index-card-img-wrap">
+          <img class="rev-index-card-img"
+               src="${n.data}"
+               alt="${n.name}"
+               loading="lazy"
+               onclick="revFullscreen(${n.id})"
+               style="cursor:zoom-in" />
+        </div>`;
+    } else if (n.type === 'written') {
+      bodyHTML = `
+        <div class="rev-index-card-img-wrap">
+          <div class="rev-index-card-pdf">
+            <span style="font-size:2rem">✏️</span>
+            <span style="font-weight:600;color:var(--ink)">${n.name}</span>
+            <span style="font-size:0.7rem;color:var(--ink-muted)">${n.date}</span>
+          </div>
+        </div>`;
+    } else {
+      bodyHTML = `
+        <div class="rev-index-card-img-wrap">
+          <div class="rev-index-card-pdf">
+            <span style="font-size:2.5rem">📄</span>
+            <span style="font-weight:600;color:var(--ink)">${n.name}</span>
+            <button class="t-btn primary" onclick="viewNote(${n.id})"
+                    style="margin-top:0.7rem;font-size:0.76rem">Open PDF</button>
+          </div>
+        </div>`;
+    }
+
+    card.innerHTML = `
+      <div class="rev-index-card-label">
+        <span>${n.name}</span>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div class="rev-index-card-tags">${subjTag}${catTag}</div>
+          <span style="font-size:0.62rem;color:var(--ink-muted)">${n.date}</span>
+          <div class="rev-index-card-actions">
+            ${n.type === 'image' ? `<button class="rev-note-btn" onclick="revFullscreen(${n.id})" title="Fullscreen">⛶</button>` : ''}
+            <button class="rev-note-btn" onclick="viewNote(${n.id})" title="Open in new tab">⤢</button>
+            <button class="rev-note-btn del" onclick="deleteNote(${n.id})" title="Delete">🗑</button>
+          </div>
+        </div>
+      </div>
+      ${bodyHTML}
+    `;
+    container.appendChild(card);
+  });
+}
+
+document.getElementById('noteUpload').addEventListener('change', e => {
+  const files = Array.from(e.target.files); if (!files.length) return;
+  const subjName  = document.getElementById('revSubjectPicker').value;
+  const category  = document.getElementById('revCategoryInput').value.trim();
+  const titleBase = document.getElementById('revTitleInput').value.trim();
+  const matchSubj = pomSubjects.find(s => s.name === subjName);
+  files.forEach((file, fi) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      revisionNotes.push({
+        id: revNextNoteId++,
+        name: titleBase || file.name.replace(/\.[^/.]+$/, ''),
+        type: file.type.includes('pdf') ? 'pdf' : 'image',
+        data: ev.target.result,
+        subject: subjName,
+        subjId: matchSubj ? matchSubj.id : null,
+        category,
+        date: todayStr()
+      });
+      if (fi === files.length - 1) {
+        renderRevNotesList();
+        renderRevSubjectPicker();
+        renderRevCategoryFilter();
+        document.getElementById('revTitleInput').value = '';
+        document.getElementById('revCategoryInput').value = '';
+        document.getElementById('noteUpload').value = '';
+        if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+        renderNotesSubjectView();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+});
+
+window.viewNote = function(id) {
+  const n = revisionNotes.find(x => x.id === id); if (!n) return;
+  const win = window.open();
+  if (n.type === 'image') win.document.write(`<img src="${n.data}" style="max-width:100%;height:auto;display:block" />`);
+  else if (n.type === 'written') win.document.write(`<div style="font-family:Georgia,serif;padding:2rem;max-width:800px;margin:auto">${n.htmlContent || ''}</div>`);
+  else win.document.write(`<iframe src="${n.data}" style="width:100%;height:100vh;border:none"></iframe>`);
+};
+
+window.deleteNote = function(id) {
+  revisionNotes = revisionNotes.filter(x => x.id !== id);
+  renderRevNotesList(); renderRevCategoryFilter();
+  if (currentSubjectId) renderSubjectPanel(currentSubjectId);
+  renderNotesSubjectView();
+};
+
+document.getElementById('revFilterSubject')?.addEventListener('change',  renderRevNotesList);
+document.getElementById('revFilterCategory')?.addEventListener('change', renderRevNotesList);
+
+// ═════════════════════════════════════════════
 // SUBJECT PANEL RENDERER
 // ═════════════════════════════════════════════
 function renderSubjectPanel(id) {
@@ -1176,7 +1395,6 @@ function renderSubjectPanel(id) {
   }
   function emptyRow(card, msg) { const d = document.createElement('div'); d.className = 'subj-empty'; d.textContent = msg; card.appendChild(d); }
 
-  // Time card
   const timeCard = makeCard('⏱', 'Study Time');
   const h = Math.floor(subj.totalSec / 3600), m = Math.floor((subj.totalSec % 3600) / 60), s = subj.totalSec % 60;
   const statEl = document.createElement('div'); statEl.className = 'subj-card-stat';
@@ -1195,7 +1413,6 @@ function renderSubjectPanel(id) {
     timeCard.appendChild(ul);
   }
 
-  // Grade card
   const gradeCard = makeCard('📊', 'Grade');
   const matchedGrade = grades.find(g => g.subject.toLowerCase().includes(subj.name.toLowerCase()) || subj.name.toLowerCase().includes(g.subject.toLowerCase()));
   if (matchedGrade) {
@@ -1214,7 +1431,6 @@ function renderSubjectPanel(id) {
     gradeCard.appendChild(row);
   }
 
-  // Tasks card
   const taskCard = makeCard('📝', 'Tasks for ' + subj.name, false);
   if (subj.todos.length === 0) emptyRow(taskCard, 'No tasks linked yet');
   else {
@@ -1238,7 +1454,6 @@ function renderSubjectPanel(id) {
     btn.addEventListener('click', fn); inp.addEventListener('keypress', e => { if (e.key === 'Enter') fn(); });
   }, 0);
 
-  // Session log card
   const sessCard = makeCard('📋', 'Session Log', false);
   if (subj.sessions.length === 0) emptyRow(sessCard, 'Complete a Pomodoro session to see logs here');
   else {
@@ -1252,7 +1467,6 @@ function renderSubjectPanel(id) {
     if (subj.sessions.length > 5) { const more = document.createElement('div'); more.className = 'subj-empty'; more.style.marginTop = '0.3rem'; more.textContent = `+${subj.sessions.length - 5} more in Pomodoro tab`; sessCard.appendChild(more); }
   }
 
-  // Notes card
   const notesCard = makeCard('📘', 'Notes', true);
   const subjNotes = revisionNotes.filter(n => n.subjId === id || n.subject === subj.name);
   if (subjNotes.length === 0) { const emp = document.createElement('div'); emp.className = 'subj-empty'; emp.innerHTML = 'No notes yet — upload in Revision and tag this subject'; notesCard.appendChild(emp); }
@@ -1280,7 +1494,6 @@ function renderSubjectPanel(id) {
   uploadShortcut.innerHTML = `<button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.6rem" onclick="quickUploadForSubject('${subj.name}')">📎 Add Note to ${subj.name}</button>`;
   notesCard.appendChild(uploadShortcut);
 
-  // Quick start card
   const startCard = makeCard('▶', 'Quick Start', false);
   startCard.innerHTML += `<div class="subj-empty" style="margin-bottom:0.5rem">Start a Pomodoro session for ${subj.name}</div><button class="t-btn primary" style="width:100%;padding:0.5rem" onclick="quickStartSubject(${id})">⏱ Start Session for ${subj.name}</button>`;
 }
@@ -1289,14 +1502,6 @@ window.quickUploadForSubject = function(subjName) {
   const picker = document.getElementById('revSubjectPicker'); if (picker) picker.value = subjName;
   const f = folders.find(x => x.panel === 'revision');
   if (f) openFolder(f.id);
-  else {
-    document.getElementById('homeView').style.display = 'none';
-    document.querySelectorAll('.tool-panel').forEach(p => p.classList.remove('visible'));
-    document.querySelector('.main-area').classList.add('panel-active');
-    document.getElementById('panel-revision').classList.add('visible');
-    document.getElementById('addressText').textContent = 'Tangent / Dashboard / Revision';
-    document.getElementById('pathLabel').textContent = 'Revision';
-  }
 };
 
 function quickStartSubject(id) {
@@ -1324,8 +1529,6 @@ window.updateSubjGrade = function(subjId, subjectName) {
   if (existing) existing.grade = g; else grades.push({ subject: subjectName, grade: g });
   renderGrades(); renderSubjectPanel(subjId);
 };
-
-document.getElementById('pomSubjectConfirm').addEventListener('click', () => { renderSbSubjects(); });
 
 // ═════════════════════════════════════════════
 // CUSTOM THEME EDITOR
@@ -1439,35 +1642,20 @@ function rgbToHex(str) {
 
 // ═════════════════════════════════════════════════════════
 // NOTES NOTEBOOK SYSTEM
-// ─────────────────────────────────────────────────────────
-// Three-level drill-down:
-//   Level 1 — Subject shelf   (one card per subject that has notes)
-//   Level 2 — Topic folders   (grouped by note.category)
-//   Level 3 — Note stack      (full-size scrollable images)
-//           OR Flashcard mode (one image at a time, prev/next)
-//
-// State:
-//   ntActiveSubject  — subject name string currently open
-//   ntActiveTopic    — category string currently open
-//   ntFlashcardNotes — ordered array of notes for flashcard session
-//   ntFcIndex        — current flashcard index
 // ═════════════════════════════════════════════════════════
 
 let ntActiveSubject  = null;
 let ntActiveTopic    = null;
 let ntFlashcardNotes = [];
 let ntFcIndex        = 0;
-let ntEditingNoteId  = null; // null = new note, id = editing existing
+let ntEditingNoteId  = null;
 
-// ── Palette for topic folder colours (cycles) ──
 const NT_TOPIC_COLOURS = [
   '#539ec4','#3aab6e','#e8a030','#9b6fd4','#e067a0',
   '#5bc8ac','#e05050','#2a8bbc','#ffe066','#8b5a2b'
 ];
 
-// ── Helper: show/hide Notes sub-views ──
 function ntShowView(view) {
-  // view = 'subject' | 'topic' | 'stack' | 'flashcard' | 'writer'
   document.getElementById('notesSubjectView').style.display   = view === 'subject'   ? '' : 'none';
   document.getElementById('notesTopicView').style.display     = view === 'topic'     ? '' : 'none';
 
@@ -1480,12 +1668,9 @@ function ntShowView(view) {
   const wrEl = document.getElementById('notesWriterView');
   wrEl.style.display = view === 'writer' ? 'flex' : 'none';
 
-  // Back button — shown when not at subject level
   document.getElementById('notesBackBtn').style.display       = view !== 'subject' ? '' : 'none';
-  // Flashcard button — shown only at stack level
   document.getElementById('notesFlashcardBtn').style.display  = view === 'stack' ? '' : 'none';
 
-  // Breadcrumb
   const bc = document.getElementById('notesBreadcrumb');
   if (view === 'subject') {
     bc.style.display = 'none';
@@ -1511,21 +1696,14 @@ function ntShowView(view) {
   }
 }
 
-// ──────────────────────────────────────────────
-// LEVEL 1: Subject shelf
-// Shows ALL pomSubjects + a General bucket,
-// whether or not they have any notes yet.
-// ──────────────────────────────────────────────
 function renderNotesSubjectView() {
   ntActiveSubject = null;
   ntActiveTopic   = null;
   ntShowView('subject');
 
-  const grid  = document.getElementById('notesSubjectGrid');
-
+  const grid = document.getElementById('notesSubjectGrid');
   grid.innerHTML = '';
-  
-  // General always first, then every subject
+
   const allSubjects = [
     { name: 'General', emoji: '📝', colour: '#539ec4' },
     ...pomSubjects.map((s, i) => ({
@@ -1535,7 +1713,7 @@ function renderNotesSubjectView() {
     })),
   ];
 
-  allSubjects.forEach(({ name: subjName, emoji, colour }, i) => {
+  allSubjects.forEach(({ name: subjName, emoji, colour }) => {
     const notes = subjName === 'General'
       ? revisionNotes.filter(n => !n.subject)
       : revisionNotes.filter(n => n.subject === subjName);
@@ -1575,9 +1753,6 @@ function renderNotesSubjectView() {
   });
 }
 
-// ──────────────────────────────────────────────
-// LEVEL 2: Topic folders inside a subject
-// ──────────────────────────────────────────────
 function openNotesSubject(subjName) {
   ntActiveSubject = subjName;
   ntActiveTopic   = null;
@@ -1592,7 +1767,6 @@ function openNotesSubject(subjName) {
 
   const topics = [...new Set(notes.map(n => n.category || 'General'))];
 
-  // "All notes" folder always first
   const allCard = buildTopicCard('All Notes', notes, '#539ec4', '📚');
   grid.appendChild(allCard);
 
@@ -1608,7 +1782,6 @@ function buildTopicCard(topicName, notes, colour, emoji) {
   const card = document.createElement('div');
   card.className = 'nt-topic-card';
 
-  // Up to 4 thumbnail previews on the folder face
   const imageNotes = notes.filter(n => n.type === 'image').slice(0, 4);
 
   let thumbsHTML = '';
@@ -1637,12 +1810,9 @@ function buildTopicCard(topicName, notes, colour, emoji) {
   return card;
 }
 
-// ──────────────────────────────────────────────
-// LEVEL 3: Note stack inside a topic
-// ──────────────────────────────────────────────
 function openNotesTopic(topicName, notes) {
   ntActiveTopic    = topicName;
-  ntFlashcardNotes = notes.filter(n => n.type !== 'written'); // only image/pdf for flashcards
+  ntFlashcardNotes = notes.filter(n => n.type !== 'written');
   ntShowView('stack');
 
   document.getElementById('notesStackCount').textContent =
@@ -1665,12 +1835,11 @@ function openNotesTopic(topicName, notes) {
     return;
   }
 
-  notes.forEach((n, i) => {
+  notes.forEach(n => {
     const card = document.createElement('div');
     card.className = 'nt-stack-card';
 
     if (n.type === 'written') {
-      // Written note — rendered inline like a document page
       card.innerHTML = `
         <div class="nt-written-card">
           <div class="nt-written-card-header">
@@ -1684,20 +1853,26 @@ function openNotesTopic(topicName, notes) {
         </div>
       `;
     } else if (n.type === 'image') {
+      // ── FIX: natural size + fullscreen on click ──
       card.innerHTML = `
         <div class="nt-stack-img-label">
           <span>${n.name}</span>
           <div style="display:flex;gap:0.4rem">
-            <button class="nt-img-action-btn" onclick="viewNote(${n.id})" title="Open full size">⤢</button>
+            <button class="nt-img-action-btn" onclick="revFullscreen(${n.id})" title="Fullscreen">⛶</button>
+            <button class="nt-img-action-btn" onclick="viewNote(${n.id})" title="Open in new tab">⤢</button>
             <button class="nt-img-action-btn nt-del" onclick="deleteNote(${n.id})" title="Delete">🗑</button>
           </div>
         </div>
         <div class="nt-stack-img-wrap">
-          <img src="${n.data}" class="nt-stack-img" alt="${n.name}" loading="lazy" />
+          <img src="${n.data}"
+               class="nt-stack-img"
+               alt="${n.name}"
+               loading="lazy"
+               onclick="revFullscreen(${n.id})"
+               style="cursor:zoom-in" />
         </div>
       `;
     } else {
-      // PDF
       card.innerHTML = `
         <div class="nt-stack-img-label">
           <span>${n.name}</span>
@@ -1716,9 +1891,6 @@ function openNotesTopic(topicName, notes) {
   });
 }
 
-// ──────────────────────────────────────────────
-// FLASHCARD MODE
-// ──────────────────────────────────────────────
 function enterFlashcardMode() {
   if (ntFlashcardNotes.length === 0) return;
   ntFcIndex = 0;
@@ -1741,9 +1913,15 @@ function renderFlashcard() {
   card.className = 'nt-fc-card';
 
   if (n.type === 'image') {
+    // ── FIX: natural size, no crop, click to fullscreen ──
     card.innerHTML = `
       <div class="nt-fc-label">${ntFcIndex + 1} / ${notes.length} — ${n.name}</div>
-      <img src="${n.data}" class="nt-fc-img" alt="${n.name}" />
+      <img src="${n.data}"
+           class="nt-stack-img"
+           alt="${n.name}"
+           loading="lazy"
+           onclick="revFullscreen(${n.id})"
+           style="cursor:zoom-in;border-radius:0 0 6px 6px" />
     `;
   } else {
     card.innerHTML = `
@@ -1767,7 +1945,6 @@ function fcStep(dir) {
 }
 
 function fcShuffle() {
-  // Fisher-Yates shuffle
   const arr = [...ntFlashcardNotes];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -1778,9 +1955,6 @@ function fcShuffle() {
   renderFlashcard();
 }
 
-// ──────────────────────────────────────────────
-// BACK NAVIGATION
-// ──────────────────────────────────────────────
 function notesGoBack() {
   const stackVisible  = document.getElementById('notesStackView').style.display !== 'none';
   const fcVisible     = document.getElementById('notesFlashcardView').style.display !== 'none';
@@ -1790,7 +1964,6 @@ function notesGoBack() {
     ntShowView('stack');
     openNotesTopic(ntActiveTopic, ntFlashcardNotes);
   } else if (writerVisible) {
-    // back from writer → stack
     openNotesTopic(ntActiveTopic, revisionNotes.filter(n =>
       ntActiveSubject === 'General' ? !n.subject : n.subject === ntActiveSubject
     ).filter(n => ntActiveTopic === 'All Notes' ? true : (n.category || 'General') === ntActiveTopic));
@@ -1801,9 +1974,6 @@ function notesGoBack() {
   }
 }
 
-// ──────────────────────────────────────────────
-// QUICK UPLOAD: navigate to Revision, pre-fill subject + category
-// ──────────────────────────────────────────────
 function notesQuickUpload() {
   const picker = document.getElementById('revSubjectPicker');
   const catInp = document.getElementById('revCategoryInput');
@@ -1812,10 +1982,6 @@ function notesQuickUpload() {
   const f = folders.find(x => x.panel === 'revision');
   if (f) openFolder(f.id);
 }
-
-// ──────────────────────────────────────────────
-// WRITTEN NOTE EDITOR (inline Notion-style)
-// ──────────────────────────────────────────────
 
 let ntWriterAutoSaveTimer = null;
 
@@ -1871,7 +2037,6 @@ function ntSaveWrittenNote() {
   const category  = ntActiveTopic === 'All Notes' ? '' : (ntActiveTopic || '');
 
   if (ntEditingNoteId) {
-    // Update existing
     const n = revisionNotes.find(x => x.id === ntEditingNoteId);
     if (n) {
       n.name        = title;
@@ -1879,7 +2044,6 @@ function ntSaveWrittenNote() {
       n.date        = todayStr();
     }
   } else {
-    // Create new written note
     revisionNotes.push({
       id:          revNextNoteId++,
       name:        title,
@@ -1900,7 +2064,6 @@ function ntSaveWrittenNote() {
   renderRevNotesList();
   renderNotesSubjectView();
 
-  // Go back to stack after a brief pause
   setTimeout(() => {
     const allSubjNotes = ntActiveSubject === 'General'
       ? revisionNotes.filter(n => !n.subject)
@@ -1923,7 +2086,6 @@ function ntCancelWrittenNote() {
   openNotesTopic(ntActiveTopic, topicNotes);
 }
 
-// Ctrl+S to save
 document.addEventListener('keydown', e => {
   if (e.ctrlKey && e.key === 's') {
     const wrVisible = document.getElementById('notesWriterView')?.style.display !== 'none';
@@ -1931,7 +2093,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Wire up the editor's Ctrl+S and auto-update status ──
 setTimeout(() => {
   const editor = document.getElementById('ntWriterEditor');
   if (!editor) return;
@@ -1946,6 +2107,432 @@ window.openNotesFromRevision = function() {
   const f = folders.find(x => x.panel === 'notes');
   if (f) openFolder(f.id);
 };
+
+// ═════════════════════════════════════════════════════════
+// EXAM TIMETABLE SYSTEM
+// ═════════════════════════════════════════════════════════
+
+let exams         = [];
+let examNextId    = 1;
+let examCalYear   = new Date().getFullYear();
+let examCalMonth  = new Date().getMonth();
+let examActiveTab = 'upcoming';
+
+const EXAM_COLOURS = [
+  '#e05050','#e8a030','#3aab6e','#539ec4','#9b6fd4',
+  '#e067a0','#5bc8ac','#2a8bbc','#f0c040','#8b5a2b'
+];
+let examPickerColour = EXAM_COLOURS[0];
+
+function examDaysUntil(dateStr) {
+  const now  = new Date(); now.setHours(0,0,0,0);
+  const exam = new Date(dateStr); exam.setHours(0,0,0,0);
+  return Math.round((exam - now) / 86400000);
+}
+
+function examUrgencyClass(days) {
+  if (days < 0)  return 'exam-past';
+  if (days === 0) return 'exam-today';
+  if (days <= 7)  return 'exam-soon';
+  if (days <= 21) return 'exam-near';
+  return 'exam-far';
+}
+
+function examCountdownText(days) {
+  if (days < 0)  return `${Math.abs(days)}d ago`;
+  if (days === 0) return 'TODAY';
+  if (days === 1) return 'TOMORROW';
+  return `${days} days`;
+}
+
+function examFmtDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+}
+
+function examFmtTime(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  const hr = parseInt(h);
+  return `${hr > 12 ? hr-12 : hr || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
+}
+
+function examSwitchTab(tab) {
+  examActiveTab = tab;
+  ['upcoming','all','calendar'].forEach(t => {
+    document.getElementById('examTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+    document.getElementById('examView' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? '' : 'none';
+  });
+  if (tab === 'upcoming')  renderExamUpcoming();
+  if (tab === 'all')       renderExamAll();
+  if (tab === 'calendar')  renderExamCalendar();
+}
+
+function renderExamUpcoming() {
+  const strip = document.getElementById('examCountdownStrip');
+  const list  = document.getElementById('examUpcomingList');
+  const empty = document.getElementById('examUpcomingEmpty');
+
+  const sorted = [...exams]
+    .filter(e => examDaysUntil(e.date) >= 0)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  strip.innerHTML = '';
+  list.innerHTML  = '';
+
+  if (exams.length === 0) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  sorted.slice(0, 5).forEach(e => {
+    const days = examDaysUntil(e.date);
+    const chip = document.createElement('div');
+    chip.className = `exam-chip ${examUrgencyClass(days)}`;
+    chip.style.borderColor = e.colour;
+    chip.innerHTML = `
+      <div class="exam-chip-count" style="color:${e.colour}">${examCountdownText(days)}</div>
+      <div class="exam-chip-name">${e.name}</div>
+    `;
+    chip.addEventListener('click', () => examScrollTo(e.id));
+    strip.appendChild(chip);
+  });
+
+  sorted.forEach(e => renderExamCard(e, list));
+
+  const past = [...exams].filter(e => examDaysUntil(e.date) < 0)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (past.length > 0) {
+    const heading = document.createElement('div');
+    heading.className = 'exam-section-heading';
+    heading.textContent = `Past Exams (${past.length})`;
+    list.appendChild(heading);
+    past.forEach(e => renderExamCard(e, list, true));
+  }
+}
+
+function renderExamAll() {
+  const list = document.getElementById('examAllList');
+  list.innerHTML = '';
+  if (exams.length === 0) {
+    list.innerHTML = '<div class="exam-empty"><div style="font-size:2rem;margin-bottom:0.5rem">🎓</div>No exams added yet.</div>';
+    return;
+  }
+  const sorted = [...exams].sort((a, b) => new Date(a.date) - new Date(b.date));
+  sorted.forEach(e => renderExamCard(e, list));
+}
+
+function renderExamCard(e, container, muted) {
+  const days = examDaysUntil(e.date);
+  const card = document.createElement('div');
+  card.className = `exam-card ${examUrgencyClass(days)}${muted ? ' exam-card-muted' : ''}`;
+  card.id = `exam-card-${e.id}`;
+  card.innerHTML = `
+    <div class="exam-card-stripe" style="background:${e.colour}"></div>
+    <div class="exam-card-body">
+      <div class="exam-card-top">
+        <div>
+          <div class="exam-card-name">${e.name}</div>
+          <div class="exam-card-meta">
+            📅 ${examFmtDate(e.date)}
+            ${e.time     ? ` · 🕐 ${examFmtTime(e.time)}` : ''}
+            ${e.duration && e.duration != '0' ? ` · ⏱ ${parseInt(e.duration)/60}h` : ''}
+            ${e.board    ? ` · ${e.board}` : ''}
+          </div>
+          ${e.location ? `<div class="exam-card-location">📍 ${e.location}</div>` : ''}
+          ${e.notes    ? `<div class="exam-card-notes">${e.notes}</div>` : ''}
+        </div>
+        <div class="exam-card-right">
+          <div class="exam-countdown-badge ${examUrgencyClass(days)}" style="border-color:${e.colour};color:${e.colour}">
+            ${examCountdownText(days)}
+          </div>
+          <div class="exam-card-actions">
+            <button onclick="examOpenForm(${e.id})" title="Edit">✏️</button>
+            <button onclick="examDelete(${e.id})" title="Delete">🗑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(card);
+}
+
+function examScrollTo(id) {
+  const el = document.getElementById(`exam-card-${id}`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function renderExamCalendar() {
+  const yr  = examCalYear;
+  const mo  = examCalMonth;
+  const grid = document.getElementById('examCalGrid');
+  const title = document.getElementById('examCalTitle');
+
+  title.textContent = `${MONTHS[mo]} ${yr}`;
+  grid.innerHTML = '';
+
+  const firstDay  = new Date(yr, mo, 1).getDay();
+  const lastDate  = new Date(yr, mo + 1, 0).getDate();
+  const todayDate = new Date();
+
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement('div'); blank.className = 'exam-cal-cell blank';
+    grid.appendChild(blank);
+  }
+
+  for (let d = 1; d <= lastDate; d++) {
+    const dateStr = `${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayExams = exams.filter(e => e.date === dateStr);
+    const isToday  = (d === todayDate.getDate() && mo === todayDate.getMonth() && yr === todayDate.getFullYear());
+
+    const cell = document.createElement('div');
+    cell.className = `exam-cal-cell${isToday ? ' today' : ''}${dayExams.length ? ' has-exam' : ''}`;
+    cell.innerHTML = `<div class="exam-cal-day-num">${d}</div>`;
+    dayExams.slice(0, 3).forEach(e => {
+      const dot = document.createElement('div');
+      dot.className = 'exam-cal-dot';
+      dot.style.background = e.colour;
+      dot.title = e.name;
+      cell.appendChild(dot);
+    });
+    if (dayExams.length > 3) {
+      const more = document.createElement('div');
+      more.className = 'exam-cal-more';
+      more.textContent = `+${dayExams.length - 3}`;
+      cell.appendChild(more);
+    }
+    if (dayExams.length) {
+      cell.addEventListener('click', () => examCalShowDay(dateStr, dayExams));
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function examCalShowDay(dateStr, dayExams) {
+  const detail = document.getElementById('examCalDayDetail');
+  const title  = document.getElementById('examCalDetailTitle');
+  const list   = document.getElementById('examCalDetailList');
+  title.textContent = examFmtDate(dateStr);
+  list.innerHTML = '';
+  dayExams.forEach(e => {
+    const row = document.createElement('div');
+    row.className = 'exam-cal-detail-row';
+    row.style.borderLeftColor = e.colour;
+    row.innerHTML = `
+      <span class="exam-cal-detail-name">${e.name}</span>
+      ${e.time ? `<span class="exam-cal-detail-time">${examFmtTime(e.time)}</span>` : ''}
+      ${e.location ? `<span class="exam-cal-detail-loc">📍 ${e.location}</span>` : ''}
+    `;
+    list.appendChild(row);
+  });
+  detail.style.display = '';
+}
+
+function examCalPrev() {
+  examCalMonth--;
+  if (examCalMonth < 0) { examCalMonth = 11; examCalYear--; }
+  renderExamCalendar();
+  document.getElementById('examCalDayDetail').style.display = 'none';
+}
+function examCalNext() {
+  examCalMonth++;
+  if (examCalMonth > 11) { examCalMonth = 0; examCalYear++; }
+  renderExamCalendar();
+  document.getElementById('examCalDayDetail').style.display = 'none';
+}
+
+function examOpenForm(id) {
+  const modal   = document.getElementById('examModal');
+  const titleEl = document.getElementById('examModalTitle');
+  const picker  = document.getElementById('examColourPicker');
+
+  picker.innerHTML = '';
+  EXAM_COLOURS.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'exam-colour-swatch' + (c === examPickerColour ? ' selected' : '');
+    btn.style.background = c;
+    btn.addEventListener('click', () => {
+      examPickerColour = c;
+      picker.querySelectorAll('.exam-colour-swatch').forEach(b => b.classList.toggle('selected', b.style.background === c || b.style.backgroundColor === c));
+    });
+    picker.appendChild(btn);
+  });
+
+  if (id) {
+    const e = exams.find(x => x.id === id);
+    if (!e) return;
+    titleEl.textContent = 'Edit Exam';
+    document.getElementById('examEditId').value   = id;
+    document.getElementById('examName').value     = e.name;
+    document.getElementById('examDate').value     = e.date;
+    document.getElementById('examTime').value     = e.time || '';
+    document.getElementById('examDuration').value = e.duration || '120';
+    document.getElementById('examBoard').value    = e.board || '';
+    document.getElementById('examLocation').value = e.location || '';
+    document.getElementById('examNotes').value    = e.notes || '';
+    examPickerColour = e.colour;
+  } else {
+    titleEl.textContent = 'Add Exam';
+    document.getElementById('examEditId').value   = '';
+    document.getElementById('examName').value     = '';
+    document.getElementById('examDate').value     = '';
+    document.getElementById('examTime').value     = '';
+    document.getElementById('examDuration').value = '120';
+    document.getElementById('examBoard').value    = '';
+    document.getElementById('examLocation').value = '';
+    document.getElementById('examNotes').value    = '';
+    examPickerColour = EXAM_COLOURS[exams.length % EXAM_COLOURS.length];
+  }
+
+  modal.style.display = 'flex';
+  document.getElementById('examName').focus();
+}
+
+function examCloseForm() {
+  document.getElementById('examModal').style.display = 'none';
+}
+
+function examSaveForm() {
+  const name = document.getElementById('examName').value.trim();
+  const date = document.getElementById('examDate').value;
+  if (!name || !date) { alert('Please enter at least a name and date.'); return; }
+
+  const data = {
+    name, date,
+    time:     document.getElementById('examTime').value,
+    duration: document.getElementById('examDuration').value,
+    board:    document.getElementById('examBoard').value.trim(),
+    location: document.getElementById('examLocation').value.trim(),
+    notes:    document.getElementById('examNotes').value.trim(),
+    colour:   examPickerColour,
+  };
+
+  const editId = document.getElementById('examEditId').value;
+  if (editId) {
+    const idx = exams.findIndex(e => e.id === parseInt(editId));
+    if (idx > -1) exams[idx] = { ...exams[idx], ...data };
+  } else {
+    exams.push({ id: examNextId++, ...data });
+  }
+
+  examCloseForm();
+  renderExams();
+}
+
+function examDelete(id) {
+  if (!confirm('Delete this exam?')) return;
+  exams = exams.filter(e => e.id !== id);
+  renderExams();
+}
+
+function renderExams() {
+  if (examActiveTab === 'upcoming')  renderExamUpcoming();
+  if (examActiveTab === 'all')       renderExamAll();
+  if (examActiveTab === 'calendar')  renderExamCalendar();
+}
+
+function examOpenImport() {
+  document.getElementById('examImportModal').style.display = 'flex';
+}
+function examCloseImport() {
+  document.getElementById('examImportModal').style.display = 'none';
+}
+function examImportTab(btn, src) {
+  document.querySelectorAll('.import-src-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['google','apple','notion'].forEach(s => {
+    document.getElementById('importSrc' + s.charAt(0).toUpperCase() + s.slice(1)).style.display = s === src ? '' : 'none';
+  });
+}
+
+async function examImportGCal() {
+  const url    = document.getElementById('gcalUrl').value.trim();
+  const status = document.getElementById('gcalStatus');
+  if (!url) { status.textContent = '⚠️ Please paste a calendar URL.'; return; }
+  status.textContent = '⏳ Fetching…';
+  try {
+    const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    const res   = await fetch(proxy);
+    const text  = await res.text();
+    const count = parseICS(text);
+    status.textContent = count > 0 ? `✅ Imported ${count} event${count > 1 ? 's' : ''}.` : '⚠️ No events found.';
+    renderExams();
+  } catch(err) {
+    status.textContent = '❌ Could not fetch — check the URL and try again.';
+  }
+}
+
+function examImportICS(input) {
+  const file = input.files[0]; if (!file) return;
+  const status = document.getElementById('icsStatus');
+  status.textContent = '⏳ Reading…';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const count = parseICS(e.target.result);
+    status.textContent = count > 0 ? `✅ Imported ${count} event${count > 1 ? 's' : ''}.` : '⚠️ No events found.';
+    renderExams();
+  };
+  reader.readAsText(file);
+}
+
+function parseICS(text) {
+  const lines = text.replace(/\r\n /g, '').replace(/\r\n/g, '\n').split('\n');
+  let count = 0, inEvent = false, cur = {};
+  lines.forEach(line => {
+    if (line === 'BEGIN:VEVENT')  { inEvent = true; cur = {}; return; }
+    if (line === 'END:VEVENT' && inEvent) {
+      inEvent = false;
+      if (cur.name && cur.date) {
+        exams.push({ id: examNextId++, name: cur.name, date: cur.date, time: cur.time || '', duration: '120', board: '', location: cur.location || '', notes: cur.description || '', colour: EXAM_COLOURS[exams.length % EXAM_COLOURS.length] });
+        count++;
+      }
+      return;
+    }
+    if (!inEvent) return;
+    const [key, ...rest] = line.split(':');
+    const val = rest.join(':').trim();
+    const keyBase = key.split(';')[0];
+    if (keyBase === 'SUMMARY')     cur.name        = val;
+    if (keyBase === 'LOCATION')    cur.location    = val;
+    if (keyBase === 'DESCRIPTION') cur.description = val.replace(/\\n/g, ' ');
+    if (keyBase === 'DTSTART') {
+      const raw = val.replace(/[TZ]/g, '');
+      const d   = raw.slice(0,8);
+      cur.date  = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+      if (val.includes('T')) { const t = raw.slice(8,12); cur.time = `${t.slice(0,2)}:${t.slice(2,4)}`; }
+    }
+  });
+  return count;
+}
+
+function examImportNotion() {
+  const csv    = document.getElementById('notionCsv').value.trim();
+  const status = document.getElementById('notionStatus');
+  if (!csv) { status.textContent = '⚠️ Paste your CSV first.'; return; }
+  const lines  = csv.split('\n').map(l => l.trim()).filter(Boolean);
+  const header = lines[0].toLowerCase().split(',').map(h => h.replace(/"/g,'').trim());
+  const iName  = header.findIndex(h => h.includes('name') || h.includes('exam') || h.includes('subject'));
+  const iDate  = header.findIndex(h => h.includes('date'));
+  const iTime  = header.findIndex(h => h.includes('time'));
+  const iLoc   = header.findIndex(h => h.includes('location') || h.includes('room') || h.includes('venue'));
+  if (iName < 0 || iDate < 0) { status.textContent = '⚠️ Could not find Name and Date columns.'; return; }
+  let count = 0;
+  lines.slice(1).forEach(line => {
+    const cols = line.split(',').map(c => c.replace(/^"|"$/g,'').trim());
+    const name = cols[iName]; const date = cols[iDate];
+    if (!name || !date) return;
+    let normDate = date;
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(date)) { const [d,m,y] = date.split('/'); normDate = `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`; }
+    exams.push({ id: examNextId++, name, date: normDate, time: iTime >= 0 ? (cols[iTime] || '') : '', duration: '120', board: '', location: iLoc >= 0 ? (cols[iLoc] || '') : '', notes: '', colour: EXAM_COLOURS[exams.length % EXAM_COLOURS.length] });
+    count++;
+  });
+  status.textContent = count > 0 ? `✅ Imported ${count} exam${count > 1 ? 's' : ''}.` : '⚠️ No valid rows found.';
+  renderExams();
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
 
 // ═════════════════════════════════════════════
 // INITIAL RENDER
