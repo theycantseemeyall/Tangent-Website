@@ -2,7 +2,7 @@
   "name": "Tangent",
   "short_name": "Tangent",
   "description": "Your personal study dashboard",
-  "start_url": "/Tangent-Website/dashboard.html"
+  "start_url": "/Tangent-Website/dashboard.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
