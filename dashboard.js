@@ -2,6 +2,15 @@
 // CONFIGURATION
 // ═════════════════════════════════════════════
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const supabase = createClient(
+  'https://fcoahfwvrpgkrchcaeft.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjb2FoZnd2cnBna3JjaGNhZWZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2MjQ1ODYsImV4cCI6MjA5MDIwMDU4Nn0.y849sbQ4-DW1g-kqIMvRirmFN8E8sCLoF-YmzftuLNk'
+)
+const { data, error } = await supabase.auth.getSession()
+console.log('Supabase connected:', data, error)
+
 const EMOJIS = [
   '⏱','📝','📊','📅','📘','🧬','📐','⚗️','⚡','📖',
   '🎯','💡','🔬','🗒️','📌','🏆','✏️','📚','🖊️','🗂️',
