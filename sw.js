@@ -1,10 +1,10 @@
 const CACHE = 'tangent-v1'
-
 const FILES = [
   '/Tangent-Website/dashboard.html',
   '/Tangent-Website/dashboard.css',
   '/Tangent-Website/dashboard.js'
 ]
+
 
 self.addEventListener('install', e => {
   e.waitUntil(
