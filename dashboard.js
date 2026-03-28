@@ -13,6 +13,11 @@ if (!session) window.location.href = 'index.html'
 const user = session.user
 console.log('Logged in as:', user.email)
 
+document.getElementById('signOutBtn').addEventListener('click', async () => {
+  await supabase.auth.signOut()
+  window.location.href = 'index.html'
+})
+
 const EMOJIS = [
   '⏱','📝','📊','📅','📘','🧬','📐','⚗️','⚡','📖',
   '🎯','💡','🔬','🗒️','📌','🏆','✏️','📚','🖊️','🗂️',
