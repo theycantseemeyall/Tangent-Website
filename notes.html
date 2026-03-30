@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="manifest" href="/Tangent-Website/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tangent">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/Tangent-Website/sw.js')
+  }
+</script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tangent — Notes</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #161616;
+    --bg3: #1e1e1e;
+    --bg4: #252525;
+    --border: #2e2e2e;
+    --border2: #3a3a3a;
+    --text: #e8e8e8;
+    --text2: #999;
+    --text3: #666;
+    --accent: #7c6af7;
+    --accent2: #9d8fff;
+    --accent-glow: rgba(124,106,247,0.15);
+    --green: #4caf7d;
+    --red: #e05c5c;
+    --yellow: #d4a843;
+    --sidebar-w: 220px;
+    --radius: 8px;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP NAV ── */
+  .topbar {
+    height: 46px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    position: sticky; top: 0; z-index: 100;
+    flex-shrink: 0;
+  }
+  .topbar-logo { font-weight: 700; font-size: 15px; letter-spacing: .5px; color: var(--text); }
+  .topbar-sep { color: var(--text3); }
+  .topbar-crumb { color: var(--text2); font-size: 13px; }
+  .topbar-crumb a { color: var(--text2); text-decoration: none; }
+  .topbar-crumb a:hover { color: var(--text); }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .topbar-icon { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 15px; padding: 4px 6px; border-radius: 5px; transition: background .15s, color .15s; }
+  .topbar-icon:hover { background: var(--bg4); color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .layout { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 46px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-section { padding: 12px 10px 6px; }
+  .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 1px; color: var(--text3); text-transform: uppercase; padding: 0 4px; margin-bottom: 6px; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 8px; border-radius: 6px;
+    cursor: pointer; color: var(--text2); font-size: 13px;
+    transition: background .12s, color .12s;
+    user-select: none;
+  }
+  .sidebar-item:hover { background: var(--bg3); color: var(--text); }
+  .sidebar-item.active { background: var(--accent-glow); color: var(--accent2); }
+  .sidebar-item .icon { font-size: 14px; flex-shrink: 0; }
+  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 8px 10px; }
+
+  .sidebar-notebooks { padding: 0 10px 8px; }
+  .notebook-entry {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px;
+    cursor: pointer; color: var(--text2); font-size: 13px;
+    transition: background .12s, color .12s;
+  }
+  .notebook-entry:hover { background: var(--bg3); color: var(--text); }
+  .notebook-entry.active { background: var(--accent-glow); color: var(--accent2); }
+  .notebook-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .nb-actions { margin-left: auto; opacity: 0; display: flex; gap: 2px; }
+  .notebook-entry:hover .nb-actions { opacity: 1; }
+  .nb-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 11px; padding: 2px 4px; border-radius: 3px; }
+  .nb-btn:hover { background: var(--bg4); color: var(--text); }
+
+  .add-notebook-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 8px; border-radius: 6px; margin: 0 10px 8px;
+    cursor: pointer; color: var(--text3); font-size: 12px;
+    border: 1px dashed var(--border2); background: none;
+    transition: all .15s; width: calc(100% - 20px);
+  }
+  .add-notebook-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* ── MAIN AREA ── */
+  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .main::-webkit-scrollbar { width: 6px; }
+  .main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── NOTES HOME (landing when no notebook open) ── */
+  .notes-home { padding: 32px; }
+  .notes-home-header { margin-bottom: 28px; }
+  .notes-home-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .notes-home-header p { color: var(--text2); font-size: 13px; }
+
+  .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 700px; margin-bottom: 36px; }
+  .mode-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 22px; cursor: pointer; transition: all .2s; position: relative; overflow: hidden;
+  }
+  .mode-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent); opacity: 0; transition: opacity .2s;
+  }
+  .mode-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .mode-card:hover::before { opacity: 1; }
+  .mode-card-icon { font-size: 28px; margin-bottom: 12px; }
+  .mode-card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .mode-card-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+  .recent-section h2 { font-size: 14px; font-weight: 600; color: var(--text2); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 14px; }
+  .recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-width: 900px; }
+  .recent-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; cursor: pointer; transition: all .15s;
+  }
+  .recent-card:hover { border-color: var(--border2); background: var(--bg3); }
+  .recent-card-icon { font-size: 20px; margin-bottom: 8px; }
+  .recent-card-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-card-meta { font-size: 11px; color: var(--text3); }
+  .recent-card-type { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-top: 8px; font-weight: 500; }
+  .type-notebook { background: rgba(124,106,247,.15); color: var(--accent2); }
+  .type-writer { background: rgba(76,175,125,.15); color: var(--green); }
+
+  /* ── NOTEBOOK VIEWER ── */
+  .notebook-view { flex: 1; display: flex; flex-direction: column; }
+  .notebook-toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); position: sticky; top: 0; z-index: 10;
+  }
+  .nb-title-area { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .nb-emoji { font-size: 20px; cursor: pointer; }
+  .nb-title-input {
+    background: none; border: none; color: var(--text); font-size: 16px; font-weight: 600;
+    outline: none; flex: 1;
+  }
+  .nb-title-input::placeholder { color: var(--text3); }
+  .toolbar-btn {
+    background: none; border: none; color: var(--text2); cursor: pointer;
+    font-size: 13px; padding: 5px 10px; border-radius: 6px; transition: all .15s;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .toolbar-btn:hover { background: var(--bg4); color: var(--text); }
+  .toolbar-btn.active { background: var(--accent-glow); color: var(--accent2); }
+
+  /* Page spread */
+  .notebook-pages {
+    flex: 1; padding: 32px; display: flex; gap: 24px;
+    justify-content: center; overflow-y: auto; overflow-x: hidden;
+  }
+  .notebook-pages::-webkit-scrollbar { width: 6px; }
+  .notebook-pages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .page-container { display: flex; flex-direction: column; gap: 24px; align-items: center; width: 100%; max-width: 820px; }
+
+  .note-page {
+    background: #fff; border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.5), 0 1px 4px rgba(0,0,0,.3);
+    width: 100%; max-width: 700px;
+    overflow: hidden; position: relative;
+  }
+  .note-page.dark-page { background: #1a1a2e; }
+
+  .page-header {
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(0,0,0,.03);
+  }
+  .dark-page .page-header { border-color: rgba(255,255,255,.06); background: rgba(255,255,255,.03); }
+  .page-title { font-size: 12px; font-weight: 600; color: #555; letter-spacing: .3px; }
+  .dark-page .page-title { color: #aaa; }
+  .page-num { font-size: 11px; color: #999; }
+
+  .page-img-container { position: relative; }
+  .page-img {
+    width: 100%; display: block;
+    cursor: zoom-in;
+  }
+  .page-img-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: all .2s;
+  }
+  .page-img-container:hover .page-img-overlay { opacity: 1; background: rgba(0,0,0,.3); }
+  .page-zoom-btn { background: rgba(0,0,0,.6); border: none; color: #fff; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; backdrop-filter: blur(4px); }
+
+  .page-pdf-preview { padding: 16px 18px; min-height: 120px; display: flex; align-items: center; justify-content: center; gap: 12px; flex-direction: column; }
+  .page-pdf-icon { font-size: 36px; }
+  .page-pdf-name { font-size: 13px; color: #444; font-weight: 500; }
+  .dark-page .page-pdf-name { color: #ccc; }
+  .page-pdf-btn { background: var(--accent); border: none; color: #fff; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+
+  /* Tabs within notebook (for organizing pages from diff subjects) */
+  .nb-tabs {
+    display: flex; align-items: center; gap: 4px;
+    padding: 0 20px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); overflow-x: auto; flex-shrink: 0;
+  }
+  .nb-tabs::-webkit-scrollbar { display: none; }
+  .nb-tab {
+    padding: 10px 16px; font-size: 13px; color: var(--text2); cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap; flex-shrink: 0;
+  }
+  .nb-tab:hover { color: var(--text); }
+  .nb-tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+  .nb-tab-add { padding: 10px 12px; color: var(--text3); cursor: pointer; font-size: 18px; transition: color .15s; }
+  .nb-tab-add:hover { color: var(--text); }
+
+  /* Upload zone inside notebook */
+  .nb-upload-zone {
+    border: 2px dashed var(--border2); border-radius: 10px;
+    padding: 32px; text-align: center; cursor: pointer;
+    transition: all .2s; margin: 0 auto; max-width: 500px; width: 100%;
+    color: var(--text3); font-size: 13px;
+  }
+  .nb-upload-zone:hover, .nb-upload-zone.dragover { border-color: var(--accent); color: var(--accent2); background: var(--accent-glow); }
+  .nb-upload-zone .uz-icon { font-size: 32px; margin-bottom: 10px; }
+  .nb-upload-zone .uz-text { margin-bottom: 6px; }
+  .nb-upload-zone .uz-sub { font-size: 11px; color: var(--text3); }
+
+  /* ── WRITER (rich text) ── */
+  .writer-view { flex: 1; display: flex; flex-direction: column; }
+
+  .writer-toolbar {
+    display: flex; align-items: center; gap: 2px; flex-wrap: wrap;
+    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); position: sticky; top: 0; z-index: 10;
+  }
+  .writer-title-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px 0; background: var(--bg2);
+  }
+  .writer-emoji-btn { font-size: 22px; cursor: pointer; background: none; border: none; padding: 4px; }
+  .writer-title {
+    font-size: 22px; font-weight: 700; background: none; border: none;
+    color: var(--text); outline: none; flex: 1; padding: 4px 0;
+    font-family: 'Georgia', serif;
+  }
+  .writer-title::placeholder { color: var(--text3); }
+
+  .fmt-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .fmt-btn {
+    background: none; border: none; color: var(--text2); cursor: pointer;
+    font-size: 13px; padding: 5px 7px; border-radius: 5px; transition: all .12s;
+    min-width: 28px; text-align: center; line-height: 1;
+  }
+  .fmt-btn:hover { background: var(--bg4); color: var(--text); }
+  .fmt-btn.active { background: var(--accent-glow); color: var(--accent2); }
+  .fmt-btn b { font-weight: 700; }
+  .fmt-btn i { font-style: italic; }
+
+  .fmt-select {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text2);
+    font-size: 12px; padding: 3px 6px; border-radius: 5px; cursor: pointer;
+    outline: none; height: 28px;
+  }
+  .fmt-select:focus { border-color: var(--accent); }
+
+  .fmt-color-btn {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border2);
+    cursor: pointer; transition: border-color .15s; padding: 0; position: relative; overflow: hidden;
+  }
+  .fmt-color-btn:hover { border-color: var(--text); }
+  .fmt-color-input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+
+  .writer-body {
+    flex: 1; padding: 32px 10%;
+    overflow-y: auto;
+  }
+  .writer-body::-webkit-scrollbar { width: 6px; }
+  .writer-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .writer-editor {
+    min-height: 500px; outline: none;
+    font-family: 'Georgia', serif; font-size: 16px; line-height: 1.75;
+    color: var(--text); caret-color: var(--accent2);
+  }
+  .writer-editor:empty::before { content: attr(data-placeholder); color: var(--text3); pointer-events: none; }
+  .writer-editor h1 { font-size: 28px; font-weight: 700; margin: 24px 0 12px; line-height: 1.3; }
+  .writer-editor h2 { font-size: 22px; font-weight: 600; margin: 20px 0 10px; }
+  .writer-editor h3 { font-size: 18px; font-weight: 600; margin: 16px 0 8px; color: var(--accent2); }
+  .writer-editor p { margin: 0 0 12px; }
+  .writer-editor ul, .writer-editor ol { padding-left: 24px; margin: 0 0 12px; }
+  .writer-editor li { margin-bottom: 4px; }
+  .writer-editor blockquote { border-left: 3px solid var(--accent); padding-left: 16px; color: var(--text2); margin: 16px 0; font-style: italic; }
+  .writer-editor code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', monospace; font-size: 14px; color: var(--accent2); }
+  .writer-editor pre { background: var(--bg3); padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; border: 1px solid var(--border); }
+  .writer-editor pre code { background: none; padding: 0; color: var(--text); }
+  .writer-editor hr { border: none; border-top: 1px solid var(--border2); margin: 28px 0; }
+  .writer-editor a { color: var(--accent2); text-decoration: underline; }
+  .writer-editor img { max-width: 100%; border-radius: 6px; margin: 12px 0; }
+  .writer-editor [data-callout] { padding: 12px 16px; border-radius: 8px; margin: 12px 0; border-left: 3px solid; }
+  .writer-editor [data-callout="info"] { background: rgba(124,106,247,.1); border-color: var(--accent); }
+  .writer-editor [data-callout="warning"] { background: rgba(212,168,67,.1); border-color: var(--yellow); }
+  .writer-editor [data-callout="success"] { background: rgba(76,175,125,.1); border-color: var(--green); }
+
+  .writer-status {
+    padding: 6px 10%; font-size: 11px; color: var(--text3);
+    border-top: 1px solid var(--border); display: flex; gap: 16px;
+    background: var(--bg2);
+  }
+
+  /* ── PANELS ── */
+  .right-panel {
+    width: 260px; border-left: 1px solid var(--border); background: var(--bg2);
+    display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+    transition: width .2s;
+  }
+  .right-panel.hidden { width: 0; overflow: hidden; border: none; }
+  .right-panel::-webkit-scrollbar { width: 4px; }
+  .right-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .panel-section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .panel-section h3 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 12px; }
+  .panel-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .panel-label { font-size: 12px; color: var(--text2); }
+  .panel-input {
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    font-size: 12px; padding: 4px 8px; border-radius: 5px; outline: none;
+    width: 130px;
+  }
+  .panel-input:focus { border-color: var(--accent); }
+
+  .cover-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .cover-swatch {
+    height: 32px; border-radius: 5px; cursor: pointer; border: 2px solid transparent;
+    transition: border-color .15s;
+  }
+  .cover-swatch.active, .cover-swatch:hover { border-color: var(--accent2); }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text2); }
+  .toggle {
+    width: 32px; height: 18px; border-radius: 9px; background: var(--bg4); border: none;
+    cursor: pointer; position: relative; transition: background .15s;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .15s;
+  }
+  .toggle.on::after { left: 16px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px;
+    padding: 28px; width: 460px; max-width: 90vw;
+    transform: translateY(12px); transition: transform .2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal h2 { font-size: 17px; margin-bottom: 6px; }
+  .modal p { color: var(--text2); font-size: 13px; margin-bottom: 22px; }
+
+  .modal-type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+  .modal-type-card {
+    padding: 16px; border: 2px solid var(--border); border-radius: 8px;
+    cursor: pointer; transition: all .15s; text-align: center;
+  }
+  .modal-type-card:hover, .modal-type-card.selected { border-color: var(--accent); background: var(--accent-glow); }
+  .modal-type-card .icon { font-size: 24px; margin-bottom: 8px; }
+  .modal-type-card .name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .modal-type-card .desc { font-size: 11px; color: var(--text2); }
+
+  .modal-field { margin-bottom: 16px; }
+  .modal-field label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .modal-field input, .modal-field select {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); font-size: 14px; padding: 8px 12px; border-radius: 7px; outline: none;
+  }
+  .modal-field input:focus, .modal-field select:focus { border-color: var(--accent); }
+
+  .modal-color-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .modal-color { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .12s; }
+  .modal-color.selected, .modal-color:hover { border-color: #fff; }
+
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+  .btn { padding: 8px 18px; border-radius: 7px; font-size: 13px; cursor: pointer; font-weight: 500; transition: all .15s; border: none; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: none; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    position: fixed; inset: 0; background: rgba(0,0,0,.9); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .lightbox.open { opacity: 1; pointer-events: all; }
+  .lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 6px; box-shadow: 0 0 60px rgba(0,0,0,.8); }
+  .lightbox-close { position: absolute; top: 20px; right: 24px; background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; opacity: .7; }
+  .lightbox-close:hover { opacity: 1; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state .es-icon { font-size: 48px; margin-bottom: 16px; opacity: .5; }
+  .empty-state .es-title { font-size: 15px; font-weight: 500; margin-bottom: 8px; color: var(--text2); }
+  .empty-state .es-desc { font-size: 13px; line-height: 1.5; margin-bottom: 20px; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn .25s ease forwards; }
+
+  /* responsive */
+  @media (max-width: 768px) {
+    .sidebar { width: 180px; }
+    .right-panel { display: none; }
+    .mode-cards { grid-template-columns: 1fr; }
+    .writer-body { padding: 24px 5%; }
+  }
+  @media (max-width: 560px) {
+    .sidebar { position: fixed; left: -200px; top: 46px; bottom: 0; z-index: 50; transition: left .2s; }
+    .sidebar.open { left: 0; }
+    .main { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <span class="topbar-logo">Tangent.</span>
+  <span class="topbar-sep">›</span>
+  <span class="topbar-crumb"><a href="dashboard.html">Dashboard</a></span>
+  <span class="topbar-sep">›</span>
+  <span class="topbar-crumb">Notes</span>
+  <div class="topbar-right">
+    <button class="topbar-icon" id="togglePanelBtn" title="Toggle info panel">📋</button>
+    <button class="topbar-icon" title="Home" onclick="location.href='dashboard.html'">⌂</button>
+    <button class="topbar-icon" id="darkToggleBtn" title="Toggle theme">🌙</button>
+  </div>
+</nav>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigate</div>
+      <div class="sidebar-item active" onclick="showHome()" id="nav-home">
+        <span class="icon">📓</span> All Notes
+      </div>
+      <div class="sidebar-item" onclick="location.href='dashboard.html'">
+        <span class="icon">🏠</span> Dashboard
+      </div>
+      <div class="sidebar-item" onclick="location.href='dashboard.html#revision'">
+        <span class="icon">📘</span> Revision
+      </div>
+    </div>
+
+    <hr class="sidebar-divider">
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Notebooks</div>
+    </div>
+
+    <div class="sidebar-notebooks" id="notebookList">
+      <!-- populated by JS -->
+    </div>
+
+    <button class="add-notebook-btn" onclick="openNewModal()">
+      ＋ New notebook
+    </button>
+
+    <hr class="sidebar-divider">
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick filters</div>
+      <div class="sidebar-item" onclick="filterType('notebook')" id="filter-notebook">
+        <span class="icon">📖</span> Photo notebooks
+      </div>
+      <div class="sidebar-item" onclick="filterType('writer')" id="filter-writer">
+        <span class="icon">✍️</span> Written notes
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main" id="mainArea">
+    <!-- home shown by default -->
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside class="right-panel" id="rightPanel">
+    <div class="panel-section">
+      <h3>Notebook Info</h3>
+      <div class="panel-row">
+        <span class="panel-label">Name</span>
+        <input class="panel-input" id="panelName" placeholder="—" oninput="updateCurrentName(this.value)" />
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">Subject</span>
+        <input class="panel-input" id="panelSubject" placeholder="—" />
+      </div>
+      <div class="panel-row">
+        <span class="panel-label">Pages</span>
+        <span id="panelPageCount" style="font-size:12px;color:var(--text2)">0</span>
+      </div>
+    </div>
+    <div class="panel-section" id="panelCoverSection">
+      <h3>Cover Colour</h3>
+      <div class="cover-picker" id="coverPicker"></div>
+    </div>
+    <div class="panel-section">
+      <h3>Display</h3>
+      <div class="toggle-row">
+        <span class="toggle-label">Dark pages</span>
+        <button class="toggle" id="darkPagesToggle" onclick="toggleDarkPages(this)"></button>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Show page titles</span>
+        <button class="toggle on" id="pageTitlesToggle" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- NEW NOTEBOOK MODAL -->
+<div class="modal-overlay" id="newModal">
+  <div class="modal">
+    <h2>✨ New Notebook</h2>
+    <p>Choose a type and give it a name.</p>
+    <div class="modal-type-row">
+      <div class="modal-type-card selected" id="typeNotebook" onclick="selectType('notebook')">
+        <div class="icon">📖</div>
+        <div class="name">Photo Notebook</div>
+        <div class="desc">Import images & PDFs from Revision</div>
+      </div>
+      <div class="modal-type-card" id="typeWriter" onclick="selectType('writer')">
+        <div class="icon">✍️</div>
+        <div class="name">Writer</div>
+        <div class="desc">Rich text editor like Notion</div>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label>Notebook name</label>
+      <input id="modalName" placeholder="e.g. Biology Chapter 3" />
+    </div>
+    <div class="modal-field">
+      <label>Emoji icon</label>
+      <input id="modalEmoji" value="📓" style="width:80px;" />
+    </div>
+    <div class="modal-field">
+      <label>Accent colour</label>
+      <div class="modal-color-row" id="modalColors"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createNotebook()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="full size" onclick="event.stopPropagation()" />
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const COLORS = ['#7c6af7','#4caf7d','#e05c5c','#d4a843','#5c9ee0','#e07db0','#6ee0d4','#a0a0a0'];
+let notebooks = JSON.parse(localStorage.getItem('tangent_notebooks') || '[]');
+let currentNB = null;
+let selectedType = 'notebook';
+let panelOpen = true;
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+function init() {
+  renderColors();
+  renderSidebar();
+  showHome();
+}
+
+function save() {
+  localStorage.setItem('tangent_notebooks', JSON.stringify(notebooks));
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const list = document.getElementById('notebookList');
+  list.innerHTML = '';
+  notebooks.forEach((nb, i) => {
+    const el = document.createElement('div');
+    el.className = 'notebook-entry' + (currentNB === i ? ' active' : '');
+    el.innerHTML = `
+      <span style="color:${nb.color};font-size:13px">${nb.emoji}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nb.name}</span>
+      <span class="nb-actions">
+        <button class="nb-btn" onclick="event.stopPropagation();deleteNB(${i})" title="Delete">🗑</button>
+      </span>
+    `;
+    el.onclick = () => openNotebook(i);
+    list.appendChild(el);
+  });
+}
+
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+function showHome(filter) {
+  currentNB = null;
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-home').classList.add('active');
+  renderSidebar();
+
+  const list = filter ? notebooks.filter(n => n.type === filter) : notebooks;
+
+  document.getElementById('mainArea').innerHTML = `
+    <div class="notes-home fade-in">
+      <div class="notes-home-header">
+        <h1>📓 Notes</h1>
+        <p>Create photo notebooks from your Revision uploads, or write freeform with the Writer.</p>
+      </div>
+
+      <div class="mode-cards">
+        <div class="mode-card" onclick="openNewModal('notebook')">
+          <div class="mode-card-icon">📖</div>
+          <div class="mode-card-title">Photo Notebook</div>
+          <div class="mode-card-desc">Import images and PDFs from your Revision section. They're laid out like a real notebook — flip through pages, zoom in, and organise by subject.</div>
+        </div>
+        <div class="mode-card" onclick="openNewModal('writer')">
+          <div class="mode-card-icon">✍️</div>
+          <div class="mode-card-title">Writer</div>
+          <div class="mode-card-desc">A rich text editor for writing your own notes. Bold, italics, headings, callouts, code blocks, and more — like Notion but yours.</div>
+        </div>
+      </div>
+
+      ${list.length === 0 ? `
+        <div class="empty-state">
+          <div class="es-icon">📂</div>
+          <div class="es-title">No notebooks yet</div>
+          <div class="es-desc">Create your first notebook above to get started.</div>
+        </div>
+      ` : `
+        <div class="recent-section">
+          <h2>${filter ? (filter==='notebook'?'Photo Notebooks':'Written Notes') : 'All notebooks'}</h2>
+          <div class="recent-grid">
+            ${list.map((nb, i) => {
+              const realIdx = notebooks.indexOf(nb);
+              return `
+                <div class="recent-card" onclick="openNotebook(${realIdx})">
+                  <div class="recent-card-icon">${nb.emoji}</div>
+                  <div class="recent-card-name">${nb.name}</div>
+                  <div class="recent-card-meta">${nb.pages?.length || 0} pages · ${nb.subject || 'No subject'}</div>
+                  <span class="recent-card-type ${nb.type === 'notebook' ? 'type-notebook' : 'type-writer'}">${nb.type === 'notebook' ? '📖 Photo Notebook' : '✍️ Writer'}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `}
+    </div>
+  `;
+  updatePanel(null);
+}
+
+function filterType(t) {
+  showHome(t);
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('filter-' + t).classList.add('active');
+}
+
+// ─── NOTEBOOK (PHOTO) ────────────────────────────────────────────────────────
+function openNotebook(i) {
+  currentNB = i;
+  renderSidebar();
+  const nb = notebooks[i];
+
+  if (nb.type === 'writer') { openWriter(i); return; }
+
+  // Photo notebook
+  document.getElementById('mainArea').innerHTML = `
+    <div class="notebook-view fade-in">
+      <div class="notebook-toolbar">
+        <div class="nb-title-area">
+          <span class="nb-emoji" title="Change emoji" onclick="changeEmoji(${i})">${nb.emoji}</span>
+          <input class="nb-title-input" value="${nb.name}" onchange="notebooks[${i}].name=this.value;save();renderSidebar();" placeholder="Notebook name…" />
+        </div>
+        <button class="toolbar-btn" onclick="showHome()">← Back</button>
+        <button class="toolbar-btn" onclick="triggerUpload(${i})" style="background:var(--accent-glow);color:var(--accent2)">＋ Add pages</button>
+        <input type="file" id="nbFileInput" accept="image/*,.pdf" multiple style="display:none" onchange="handlePageUpload(event,${i})" />
+      </div>
+      <div class="nb-tabs" id="nbTabs-${i}">
+        <div class="nb-tab active" data-tab="all">All pages</div>
+        ${(nb.tabs||[]).map((t,ti) => `<div class="nb-tab" data-tab="${ti}" onclick="switchTab(${i},${ti})">${t}</div>`).join('')}
+        <div class="nb-tab-add" onclick="addTab(${i})" title="Add section">＋</div>
+      </div>
+      <div class="notebook-pages" id="pages-${i}">
+        ${renderPages(i)}
+      </div>
+    </div>
+  `;
+  updatePanel(i);
+}
+
+function renderPages(i) {
+  const nb = notebooks[i];
+  const pages = nb.pages || [];
+  if (pages.length === 0) {
+    return `
+      <div class="nb-upload-zone" id="dropZone-${i}"
+        ondragover="event.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="handleDrop(event,${i})"
+        onclick="triggerUpload(${i})">
+        <div class="uz-icon">📸</div>
+        <div class="uz-text">Drop images or PDFs here</div>
+        <div class="uz-sub">Or click to browse · Pulls from your Revision uploads</div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="page-container">
+      ${pages.map((p, pi) => `
+        <div class="note-page ${nb.darkPages ? 'dark-page' : ''}" id="page-${i}-${pi}">
+          <div class="page-header">
+            <span class="page-title">${p.title || nb.name}</span>
+            <span class="page-num">${pi+1} / ${pages.length}</span>
+          </div>
+          ${p.type === 'pdf' ? `
+            <div class="page-pdf-preview">
+              <div class="page-pdf-icon">📄</div>
+              <div class="page-pdf-name">${p.name}</div>
+              <button class="page-pdf-btn" onclick="openPDF('${p.src}')">Open PDF</button>
+            </div>
+          ` : `
+            <div class="page-img-container">
+              <img class="page-img" src="${p.src}" alt="${p.title || 'Note'}" loading="lazy" />
+              <div class="page-img-overlay">
+                <button class="page-zoom-btn" onclick="openLightbox('${p.src}')">🔍 Full size</button>
+              </div>
+            </div>
+          `}
+        </div>
+      `).join('')}
+      <div class="nb-upload-zone" style="margin-top:8px"
+        ondragover="event.preventDefault();this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="handleDrop(event,${i})"
+        onclick="triggerUpload(${i})">
+        <div class="uz-icon">＋</div>
+        <div class="uz-text">Add more pages</div>
+      </div>
+    </div>
+  `;
+}
+
+function triggerUpload(i) {
+  const inp = document.getElementById('nbFileInput');
+  inp.onchange = (e) => handlePageUpload(e, i);
+  inp.click();
+}
+
+function handlePageUpload(event, i) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  const nb = notebooks[i];
+  if (!nb.pages) nb.pages = [];
+
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const isPdf = file.type === 'application/pdf';
+      nb.pages.push({ src: e.target.result, title: file.name.replace(/\.[^.]+$/,''), type: isPdf ? 'pdf' : 'image', name: file.name });
+      loaded++;
+      if (loaded === files.length) { save(); openNotebook(i); }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleDrop(event, i) {
+  event.preventDefault();
+  const files = Array.from(event.dataTransfer.files);
+  if (!files.length) return;
+  const nb = notebooks[i];
+  if (!nb.pages) nb.pages = [];
+  let loaded = 0;
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      nb.pages.push({ src: e.target.result, title: file.name.replace(/\.[^.]+$/,''), type: file.type.includes('pdf') ? 'pdf' : 'image', name: file.name });
+      loaded++;
+      if (loaded === files.length) { save(); openNotebook(i); }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function addTab(i) {
+  const name = prompt('Section name:');
+  if (!name) return;
+  if (!notebooks[i].tabs) notebooks[i].tabs = [];
+  notebooks[i].tabs.push(name);
+  save(); openNotebook(i);
+}
+
+// ─── WRITER ──────────────────────────────────────────────────────────────────
+function openWriter(i) {
+  const nb = notebooks[i];
+  document.getElementById('mainArea').innerHTML = `
+    <div class="writer-view fade-in">
+      <div class="writer-title-bar">
+        <button class="writer-emoji-btn" title="Change emoji" onclick="changeEmoji(${i})">${nb.emoji}</button>
+        <input class="writer-title" placeholder="Untitled note…" value="${nb.title||nb.name}" oninput="notebooks[${i}].title=this.value;save();renderSidebar();" />
+        <button class="toolbar-btn" onclick="showHome()">← Back</button>
+      </div>
+      <div class="writer-toolbar">
+        <select class="fmt-select" onchange="execCmd('formatBlock',this.value);this.value=''">
+          <option value="">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="pre">Code block</option>
+          <option value="blockquote">Quote</option>
+        </select>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+        <button class="fmt-btn" onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+        <button class="fmt-btn" onclick="execCmd('underline')" title="Underline" style="text-decoration:underline">U</button>
+        <button class="fmt-btn" onclick="execCmd('strikeThrough')" title="Strikethrough" style="text-decoration:line-through">S</button>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" onclick="execCmd('insertUnorderedList')" title="Bullet list">• List</button>
+        <button class="fmt-btn" onclick="execCmd('insertOrderedList')" title="Numbered list">1. List</button>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" onclick="insertCallout('info')" title="Info callout">ℹ️</button>
+        <button class="fmt-btn" onclick="insertCallout('warning')" title="Warning callout">⚠️</button>
+        <button class="fmt-btn" onclick="insertCallout('success')" title="Success callout">✅</button>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" onclick="execCmd('insertHorizontalRule')" title="Divider">— Rule</button>
+        <button class="fmt-btn" onclick="insertLink()" title="Link">🔗</button>
+        <button class="fmt-btn" onclick="insertImageInWriter(${i})" title="Insert image">🖼</button>
+        <input type="file" id="writerImgInput" accept="image/*" style="display:none" onchange="handleWriterImg(event)" />
+        <div class="fmt-sep"></div>
+        <span style="font-size:11px;color:var(--text3);padding:0 6px">Text:</span>
+        <button class="fmt-color-btn" title="Text colour" style="background:#e8e8e8">
+          <input class="fmt-color-input" type="color" value="#e8e8e8" oninput="execCmd('foreColor',this.value)" />
+        </button>
+        <button class="fmt-color-btn" title="Highlight" style="background:#d4a843">
+          <input class="fmt-color-input" type="color" value="#d4a843" oninput="execCmd('hiliteColor',this.value)" />
+        </button>
+        <div class="fmt-sep"></div>
+        <select class="fmt-select" onchange="document.getElementById('writerEditor').style.fontFamily=this.value">
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Courier New', monospace">Monospace</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="'Times New Roman', serif">Times</option>
+        </select>
+      </div>
+      <div class="writer-body">
+        <div class="writer-editor" id="writerEditor" contenteditable="true"
+          data-placeholder="Start writing… use / for commands"
+          oninput="saveWriterContent(${i})"
+          onkeydown="handleWriterKey(event, ${i})"
+        >${nb.content || ''}</div>
+      </div>
+      <div class="writer-status">
+        <span id="wordCount">0 words</span>
+        <span id="charCount">0 chars</span>
+        <span style="margin-left:auto;color:var(--green)" id="saveStatus">Saved</span>
+      </div>
+    </div>
+  `;
+
+  const editor = document.getElementById('writerEditor');
+  updateWordCount(editor);
+  updatePanel(i);
+}
+
+function execCmd(cmd, val) {
+  document.execCommand(cmd, false, val || null);
+  document.getElementById('writerEditor')?.focus();
+}
+
+function insertCallout(type) {
+  const icons = { info: 'ℹ️', warning: '⚠️', success: '✅' };
+  document.execCommand('insertHTML', false, `<div data-callout="${type}">${icons[type]} <strong>${type.charAt(0).toUpperCase()+type.slice(1)}</strong>: Click to edit this callout.</div><p></p>`);
+}
+
+function insertLink() {
+  const url = prompt('URL:');
+  if (url) document.execCommand('createLink', false, url);
+}
+
+function insertImageInWriter(i) {
+  document.getElementById('writerImgInput').click();
+}
+
+function handleWriterImg(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.execCommand('insertHTML', false, `<img src="${e.target.result}" alt="${file.name}" />`);
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveWriterContent(i) {
+  const editor = document.getElementById('writerEditor');
+  if (!editor) return;
+  notebooks[i].content = editor.innerHTML;
+  save();
+  updateWordCount(editor);
+  const status = document.getElementById('saveStatus');
+  if (status) { status.textContent = 'Saved'; status.style.color = 'var(--green)'; }
+}
+
+function updateWordCount(editor) {
+  const text = editor.innerText || '';
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const el = document.getElementById('wordCount');
+  const el2 = document.getElementById('charCount');
+  if (el) el.textContent = words + ' words';
+  if (el2) el2.textContent = text.length + ' chars';
+}
+
+function handleWriterKey(event, i) {
+  // Auto-save on ctrl+s
+  if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+    event.preventDefault();
+    saveWriterContent(i);
+    const status = document.getElementById('saveStatus');
+    if (status) { status.textContent = '✓ Saved'; setTimeout(() => status.textContent = 'Saved', 1500); }
+  }
+}
+
+// ─── MODAL ───────────────────────────────────────────────────────────────────
+function renderColors() {
+  const row = document.getElementById('modalColors');
+  COLORS.forEach((c, ci) => {
+    const btn = document.createElement('div');
+    btn.className = 'modal-color' + (ci === 0 ? ' selected' : '');
+    btn.style.background = c;
+    btn.onclick = () => { document.querySelectorAll('.modal-color').forEach(b => b.classList.remove('selected')); btn.classList.add('selected'); };
+    row.appendChild(btn);
+  });
+
+  // Cover picker
+  const cp = document.getElementById('coverPicker');
+  COLORS.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'cover-swatch';
+    sw.style.background = c;
+    sw.onclick = () => { document.querySelectorAll('.cover-swatch').forEach(s => s.classList.remove('active')); sw.classList.add('active'); if (currentNB !== null) { notebooks[currentNB].color = c; save(); renderSidebar(); } };
+    cp.appendChild(sw);
+  });
+}
+
+function selectType(t) {
+  selectedType = t;
+  document.getElementById('typeNotebook').classList.toggle('selected', t === 'notebook');
+  document.getElementById('typeWriter').classList.toggle('selected', t === 'writer');
+}
+
+function openNewModal(preType) {
+  if (preType) selectType(preType);
+  document.getElementById('newModal').classList.add('open');
+  document.getElementById('modalName').focus();
+}
+
+function closeModal() {
+  document.getElementById('newModal').classList.remove('open');
+}
+
+function createNotebook() {
+  const name = document.getElementById('modalName').value.trim() || 'Untitled';
+  const emoji = document.getElementById('modalEmoji').value.trim() || '📓';
+  const color = document.querySelector('.modal-color.selected')?.style.background || COLORS[0];
+  notebooks.push({ name, emoji, color, type: selectedType, pages: [], content: '', title: name });
+  save();
+  closeModal();
+  renderSidebar();
+  openNotebook(notebooks.length - 1);
+  document.getElementById('modalName').value = '';
+}
+
+// ─── PANEL ───────────────────────────────────────────────────────────────────
+function updatePanel(i) {
+  const panel = document.getElementById('rightPanel');
+  if (i === null) {
+    document.getElementById('panelName').value = '';
+    document.getElementById('panelSubject').value = '';
+    document.getElementById('panelPageCount').textContent = '—';
+    return;
+  }
+  const nb = notebooks[i];
+  document.getElementById('panelName').value = nb.name;
+  document.getElementById('panelSubject').value = nb.subject || '';
+  document.getElementById('panelPageCount').textContent = (nb.pages?.length || nb.content ? (nb.pages?.length || '—') : 0);
+  document.getElementById('panelCoverSection').style.display = nb.type === 'notebook' ? '' : 'none';
+}
+
+function updateCurrentName(val) {
+  if (currentNB === null) return;
+  notebooks[currentNB].name = val;
+  save(); renderSidebar();
+}
+
+function toggleDarkPages(btn) {
+  btn.classList.toggle('on');
+  if (currentNB !== null) {
+    notebooks[currentNB].darkPages = btn.classList.contains('on');
+    save();
+    if (notebooks[currentNB].type === 'notebook') openNotebook(currentNB);
+  }
+}
+
+document.getElementById('togglePanelBtn').onclick = () => {
+  panelOpen = !panelOpen;
+  document.getElementById('rightPanel').classList.toggle('hidden', !panelOpen);
+};
+
+// ─── NOTEBOOK CONTROLS ───────────────────────────────────────────────────────
+function changeEmoji(i) {
+  const e = prompt('Enter emoji:', notebooks[i].emoji);
+  if (e) { notebooks[i].emoji = e; save(); if (notebooks[i].type === 'writer') openWriter(i); else openNotebook(i); }
+}
+
+function deleteNB(i) {
+  if (!confirm(`Delete "${notebooks[i].name}"?`)) return;
+  notebooks.splice(i, 1);
+  save(); currentNB = null; renderSidebar(); showHome();
+}
+
+// ─── LIGHTBOX ────────────────────────────────────────────────────────────────
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+function openPDF(src) {
+  window.open(src, '_blank');
+}
+
+// ─── DARK TOGGLE (pages are separate from app theme) ─────────────────────────
+document.getElementById('darkToggleBtn').onclick = () => {
+  document.documentElement.style.setProperty('--bg', document.documentElement.style.getPropertyValue('--bg') === '#ffffff' ? '#0f0f0f' : '#ffffff');
+};
+
+// ─── CLOSE MODAL ON OVERLAY CLICK ────────────────────────────────────────────
+document.getElementById('newModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── START ───────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
