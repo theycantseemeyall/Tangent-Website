@@ -19,14 +19,6 @@ document.getElementById('signOutBtn').addEventListener('click', async () => {
   window.location.href = 'index.html'
 })
 
-function openFolder() {
-    console.log("Folder opened");
-}
-
-function pomExitFullscreen() {
-    console.log("Exited fullscreen");
-}
-
 const EMOJIS = [
   '⏱','📝','📊','📅','📘','🧬','📐','⚗️','⚡','📖',
   '🎯','💡','🔬','🗒️','📌','🏆','✏️','📚','🖊️','🗂️',

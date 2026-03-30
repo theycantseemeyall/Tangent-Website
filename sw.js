@@ -1,5 +1,4 @@
 const CACHE = 'tangent-v1'
-
 const FILES = [
   '/Tangent-Website/dashboard.html',
   '/Tangent-Website/dashboard.css',
