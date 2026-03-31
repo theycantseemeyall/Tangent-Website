@@ -323,7 +323,7 @@
           <div><div class="tp-title">Calendar</div><div class="tp-sub">All your exams, countdowns & imports</div></div>
           <div style="display:flex;gap:0.5rem;margin-left:auto">
             <button class="t-btn" onclick="examOpenImport()" style="font-size:0.72rem;padding:0.25rem 0.75rem">⬇ Import</button>
-            <button class="t-btn primary" onclick="examOpenForm()" style="font-size:0.72rem;padding:0.25rem 0.75rem">＋ Add Calendar(s)</button>
+            <button class="t-btn primary" onclick="examOpenForm()" style="font-size:0.72rem;padding:0.25rem 0.75rem">＋ Add</button>
           </div>
         </div>
 
@@ -343,7 +343,7 @@
             <div style="font-weight:600;margin-bottom:0.3rem">No exams yet</div>
             <div style="font-size:0.78rem;color:var(--ink-muted);margin-bottom:1rem">Add exams manually or import from Google Calendar, Apple Calendar or Notion</div>
             <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap">
-              <button class="t-btn primary" onclick="examOpenForm()" style="font-size:0.78rem">＋ Add Calendar(s)</button>
+              <button class="t-btn primary" onclick="examOpenForm()" style="font-size:0.78rem">＋ Add Exams or Assignments</button>
               <button class="t-btn" onclick="examOpenImport()" style="font-size:0.78rem">⬇ Import</button>
             </div>
           </div>
@@ -777,6 +777,29 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
   }
+</script>
+<script src="dashboard.js"></script>
+<script>
+  // Make functions available immediately for onclick attributes
+  // These are set as soon as the module runs
+  const _ready = () => {
+    const fns = ['sideNav','openFolder','showHome','openCustomise','closeModal',
+      'applyCustomise','ctxOpen','ctxCustomise','ctxRename','ctxDelete',
+      'openThemeEditor','closeThemeEditor','applyTheme','resetTheme','setView',
+      'toggleDetail','openAddSubjectSidebar','confirmAddSubjectSidebar',
+      'cancelAddSubjectSidebar','openSubjectPanel','examSwitchTab','examOpenForm',
+      'examCloseForm','examSaveForm','examDelete','examCalPrev','examCalNext',
+      'examOpenImport','examCloseImport','examImportTab','examImportGCal',
+      'examImportICS','examImportNotion','ntOpenWrittenNoteEditor','ntSaveWrittenNote',
+      'ntCancelWrittenNote','ntWExec','ntInsertCallout','notesGoBack','notesQuickUpload',
+      'enterFlashcardMode','fcStep','fcShuffle','renderNotesSubjectView','openNotesSubject',
+      'pomEnterFullscreen','pomExitFullscreen','pomFsDoToggle','pomFsDoReset','pomFsDoSkip',
+      'quickStartSubject','openSubjFolderCustomise','calRender','examCalShowDay',
+      'revFullscreen','ctxRenameSubj','ctxDeleteSubj','openSubjFolderCustomise'];
+    if (fns.every(f => window[f])) return;
+    setTimeout(_ready, 50);
+  };
+  setTimeout(_ready, 50);
 </script>
 </body>
 </html>
