@@ -69,6 +69,32 @@ body, .sidebar, .titlebar, .toolbar, .statusbar,
 /* ═══════════════════════════════════════════════════
    BASE LAYOUT
 ═══════════════════════════════════════════════════ */
+
+/*Sign out button*/
+.profile-box{
+  display:flex;
+  align-items:center;
+  gap:0.4rem;
+  padding:0.25rem 0.6rem;
+  border:1px solid var(--rule);
+  border-radius:4px;
+  cursor:pointer;
+  font-size:0.75rem;
+  color:var(--ink-muted);
+  transition:0.15s;
+}
+
+.profile-box:hover{
+  border-color:var(--accent);
+  color:var(--accent);
+}
+
+.profile-avatar{
+  font-size:0.9rem;
+}
+
+
+
 html, body {
   height: 100vh;
   overflow: hidden;

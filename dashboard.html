@@ -37,15 +37,52 @@
       <button class="tb-pill" id="themeToggle">🌙</button>
     </div>
   </div>
-<button id="signOutBtn" title="Sign out" style="
-  background: none;
-  border: 1px solid var(--rule);
-  color: var(--ink-muted);
-  font-size: 0.75rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: 4px;
-  cursor: pointer;
-">Sign out</button>
+
+  <div class="titlebar-right">
+
+  <div id="profileBox" class="profile-box" title="Open profile">
+    <span class="profile-avatar">👤</span>
+    <span id="profileName">Student</span>
+  </div>
+
+  <button id="signOutBtn" class="tb-pill">Sign out</button>
+
+  <span id="clock">--:--:--</span>
+  <button class="tb-pill" id="fmtToggle">24H</button>
+  <button class="tb-pill" id="themeToggle">🌙</button>
+
+</div>
+
+<div id="profileModal" class="modal-bg" style="display:none">
+  <div class="modal-box" style="max-width:420px">
+
+    <button class="modal-close" onclick="closeProfile()">✕</button>
+
+    <div class="modal-title">User Profile</div>
+
+    <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
+      <div style="font-size:2.5rem">👤</div>
+      <div>
+        <div id="profileFullName" style="font-weight:600">Student</div>
+        <div id="profileEmail" style="font-size:0.75rem;color:var(--ink-muted)">
+          student@email.com
+        </div>
+      </div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div style="display:flex;flex-direction:column;gap:0.5rem">
+
+      <button class="t-btn">⚙ Account Settings</button>
+      <button class="t-btn">🎨 Appearance</button>
+      <button class="t-btn">🔐 Privacy</button>
+      <button class="t-btn">📊 Study Stats</button>
+
+    </div>
+
+  </div>
+</div>
   <!-- ═══════════════════════════════════════════════════
        TOOLBA
   ═══════════════════════════════════════════════════ -->

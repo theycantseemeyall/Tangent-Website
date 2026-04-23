@@ -2614,3 +2614,21 @@ window.openSubjFolderCustomise = openSubjFolderCustomise
 window.calRender = calRender
 window.examCalShowDay = examCalShowDay
 })()
+
+
+const profileBox = document.getElementById("profileBox");
+
+profileBox.addEventListener("dblclick", () => {
+  openProfile();
+});
+
+function openProfile(){
+  document.getElementById("profileModal").style.display = "flex";
+}
+
+function closeProfile(){
+  document.getElementById("profileModal").style.display = "none";
+}
+
+document.getElementById("profileFullName").textContent =
+localStorage.getItem("username") || "Student";
