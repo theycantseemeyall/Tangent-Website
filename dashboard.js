@@ -2632,3 +2632,11 @@ function closeProfile(){
 
 document.getElementById("profileFullName").textContent =
 localStorage.getItem("username") || "Student";
+
+const signOutBtn = document.getElementById('signOutBtn')
+if (signOutBtn) {
+  signOutBtn.addEventListener('click', async () => {
+    await supabase.auth.signOut()
+    window.location.href = 'index.html'
+  })
+}
