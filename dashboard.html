@@ -39,15 +39,14 @@
 
   <div class="titlebar-right">
 
-  <div id="profileBox" class="profile-box" title="Open profile">
-    <span class="profile-avatar">👤</span>
-    <span id="profileName">Student</span>
-  </div>
-
-  <button class="tb-pill" id="fmtToggle">24H</button>
-  <button class="tb-pill" id="themeToggle">🌙</button>
-
+  <div style="display:flex;flex-direction:column;gap:0.5rem">
+  <button class="t-btn">⚙ Account Settings</button>
+  <button class="t-btn">🎨 Appearance</button>
+  <button class="t-btn">🔐 Privacy</button>
+  <button class="t-btn">📊 Study Stats</button>
+  <button class="t-btn" id="signOutBtn">🚪 Sign Out</button>  <!-- add this -->
 </div>
+
 
 <div id="profileModal" class="modal-bg" style="display:none">
   <div class="modal-box" style="max-width:420px">
@@ -96,14 +95,7 @@
        EXPLORER BODY
   ═══════════════════════════════════════════════════ -->
   <div class="explorer">
-    <div style="display:flex;flex-direction:column;gap:0.5rem">
-  <button class="t-btn">⚙ Account Settings</button>
-  <button class="t-btn">🎨 Appearance</button>
-  <button class="t-btn">🔐 Privacy</button>
-  <button class="t-btn">📊 Study Stats</button>
-  <button class="t-btn" id="signOutBtn">🚪 Sign Out</button>  <!-- add this -->
-</div>
-
+   
     <!-- ── LEFT SIDEBAR ── -->
     <div class="sidebar">
 
