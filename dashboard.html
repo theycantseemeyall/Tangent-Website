@@ -6,12 +6,109 @@
   <title>Tangent — Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dashboard.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f5f4f0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Tangent">
 
- <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#f5f4f0">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Tangent">
+  <style>
+    /* ── Inline nav panel inside explorer ── */
+    .inline-nav {
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      background: var(--bg-card);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .inline-nav-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .inline-nav-header:hover { background: var(--bg-inset); }
+    .inline-nav.open .inline-nav-header { border-bottom-color: var(--rule); }
+    .inline-nav-title {
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      font-weight: 600;
+    }
+    .inline-nav-arrow {
+      font-size: 0.65rem;
+      color: var(--ink-muted);
+      transition: transform 0.2s;
+    }
+    .inline-nav.open .inline-nav-arrow { transform: rotate(180deg); }
+    .inline-nav-body {
+      display: none;
+      padding: 0.4rem 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+    .inline-nav.open .inline-nav-body { display: flex; }
+    .nav-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      border: 1px solid var(--rule);
+      background: var(--bg);
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+    .nav-chip:hover { background: var(--bg-inset); border-color: var(--accent); }
+    .nav-chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
 
+    /* ── Remove the old left sidebar (it still exists in the DOM but we hide it) ── */
+    .sidebar { display: none !important; }
+
+    /* ── Make the main-area fill the full width now the sidebar is gone ── */
+    .explorer { display: flex; flex-direction: column; }
+    .main-area { flex: 1; min-width: 0; }
+    .detail-panel { display: none; } /* keep hidden for now so layout is clean */
+
+    /* ── Subjects section header ── */
+    .dash-section { margin-bottom: 1.4rem; }
+    .dash-section-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .dash-section-add {
+      margin-left: auto;
+      font-size: 0.68rem;
+      padding: 0.15rem 0.6rem;
+      background: none;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      color: var(--ink-muted);
+      cursor: pointer;
+      transition: color 0.12s, border-color 0.12s;
+    }
+    .dash-section-add:hover { color: var(--accent); border-color: var(--accent); }
+  </style>
 </head>
 <body>
 
@@ -30,40 +127,42 @@
       </div>
     </div>
     <div class="titlebar-center">Tangent<span>.</span></div>
+    <div class="titlebar-right">
+      <div id="profileBox" class="profile-box" title="Open profile" onclick="openProfile()">
+        <span class="profile-avatar">👤</span>
+        <span id="profileName">Student</span>
+      </div>
+      <span id="clock">--:--:--</span>
+      <button class="tb-pill" id="fmtToggle">24H</button>
+      <button class="tb-pill" id="themeToggle">🌙</button>
+    </div>
   </div>
 
-<div id="profileModal" class="modal-bg" style="display:none">
-  <div class="modal-box" style="max-width:420px">
-
-    <button class="modal-close" onclick="closeProfile()">✕</button>
-
-    <div class="modal-title">User Profile</div>
-
-    <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
-      <div style="font-size:2.5rem">👤</div>
-      <div>
-        <div id="profileFullName" style="font-weight:600">Student</div>
-        <div id="profileEmail" style="font-size:0.75rem;color:var(--ink-muted)">
-          student@email.com
+  <!-- Profile Modal -->
+  <div id="profileModal" class="modal-bg" style="display:none">
+    <div class="modal-box" style="max-width:420px">
+      <button class="modal-close" onclick="closeProfile()">✕</button>
+      <div class="modal-title">User Profile</div>
+      <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
+        <div style="font-size:2.5rem">👤</div>
+        <div>
+          <div id="profileFullName" style="font-weight:600">Student</div>
+          <div id="profileEmail" style="font-size:0.75rem;color:var(--ink-muted)">student@email.com</div>
         </div>
       </div>
+      <div class="sb-divider"></div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <button class="t-btn">⚙ Account Settings</button>
+        <button class="t-btn">🎨 Appearance</button>
+        <button class="t-btn">🔐 Privacy</button>
+        <button class="t-btn">📊 Study Stats</button>
+        <button class="t-btn" id="signOutBtn">🚪 Sign Out</button>
+      </div>
     </div>
-
-    <div class="sb-divider"></div>
-
-    <div style="display:flex;flex-direction:column;gap:0.5rem">
-
-      <button class="t-btn">⚙ Account Settings</button>
-      <button class="t-btn">🎨 Appearance</button>
-      <button class="t-btn">🔐 Privacy</button>
-      <button class="t-btn">📊 Study Stats</button>
-
-    </div>
-
   </div>
-</div>
+
   <!-- ═══════════════════════════════════════════════════
-       TOOLBA
+       TOOLBAR
   ═══════════════════════════════════════════════════ -->
   <div class="toolbar">
     <button class="toolbar-btn" onclick="showHome()" title="Home">⌂</button>
@@ -76,69 +175,9 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════
-       EXPLORER BODY
+       EXPLORER BODY  (sidebar removed, nav moved inline)
   ═══════════════════════════════════════════════════ -->
   <div class="explorer">
-   
-    <!-- ── LEFT SIDEBAR ── -->
-    <div class="sidebar">
-
-      <div class="sb-heading">Quick Access</div>
-      <div class="sb-item active" data-nav="home"     onclick="sideNav(this,'home')">     <span class="si">🏠</span> Dashboard</div>
-      <div class="sb-item"        data-nav="pomodoro" onclick="sideNav(this,'pomodoro')"> <span class="si">⏱</span> Pomodoro</div>
-      <div class="sb-item"        data-nav="todo"     onclick="sideNav(this,'todo')">     <span class="si">📝</span> To-Do</div>
-      <div class="sb-item"        data-nav="grades"   onclick="sideNav(this,'grades')">   <span class="si">📊</span> Grades</div>
-      <div class="sb-item"        data-nav="revision" onclick="sideNav(this,'revision')"> <span class="si">📘</span> Revision</div>
-      <div class="sb-item"        data-nav="notes"    onclick="sideNav(this,'notes')">    <span class="si">📓</span> Notes</div>
-      <div class="sb-item"        data-nav="exams"    onclick="sideNav(this,'exams')">    <span class="si">🎓</span> Calendar</div>
-
-      <div class="sb-divider"></div>
-
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.9rem 0.25rem">
-        <div class="sb-heading" style="padding:0">Subjects</div>
-        <button onclick="openAddSubjectSidebar()" title="Add subject"
-                style="background:none;border:none;color:var(--ink-muted);font-size:0.75rem;line-height:1;transition:color 0.15s"
-                onmouseenter="this.style.color='var(--accent)'"
-                onmouseleave="this.style.color='var(--ink-muted)'">＋</button>
-      </div>
-
-      <div id="sbAddSubjectForm" style="display:none;flex-direction:column;gap:0.3rem;padding:0.2rem 0.7rem 0.4rem">
-        <input type="text" id="sbSubjectInput" class="t-input"
-               placeholder="Subject name…"
-               style="height:26px;font-size:0.76rem;padding:0.2rem 0.5rem" />
-        <div style="display:flex;gap:0.3rem">
-          <button class="t-btn primary" onclick="confirmAddSubjectSidebar()"
-                  style="flex:1;height:24px;font-size:0.7rem;padding:0">Add</button>
-          <button class="t-btn" onclick="cancelAddSubjectSidebar()"
-                  style="height:24px;font-size:0.7rem;padding:0 0.4rem">✕</button>
-        </div>
-      </div>
-
-      <div id="sbSubjectList"></div>
-
-      <div class="sb-divider"></div>
-
-      <div class="sb-heading">System</div>
-     <div class="sb-item" onclick="openCustomise(null)"><span class="si">🎨</span> New Folder</div>
-      <div class="sb-item" onclick="openThemeEditor()"><span class="si">🖌️</span> Custom Theme</div>
-
-      <div class="sb-divider"></div>
-
-      <div class="sb-heading">Colour Palette</div>
-      <div class="palette-panel">
-        <div class="palette-panel-title">Folder themes</div>
-        <div class="palette-presets" id="palettePresets"></div>
-        <div class="palette-site-row">
-          <span class="palette-site-label">Apply accent to site</span>
-          <label class="toggle-wrap">
-            <input type="checkbox" id="siteThemeToggle" />
-            <div class="toggle-track"></div>
-            <div class="toggle-thumb"></div>
-          </label>
-        </div>
-      </div>
-
-    </div><!-- /sidebar -->
 
     <!-- ── MAIN CONTENT ── -->
     <div class="main-area">
@@ -153,6 +192,25 @@
       </div>
 
       <div class="content-scroll" id="contentScroll">
+
+        <!-- ══ INLINE NAV (replaces sidebar) ══ -->
+        <div class="inline-nav open" id="inlineNav">
+          <div class="inline-nav-header" onclick="toggleInlineNav()">
+            <span class="inline-nav-title">Navigation</span>
+            <span class="inline-nav-arrow">▼</span>
+          </div>
+          <div class="inline-nav-body">
+            <button class="nav-chip active" data-nav="home"     onclick="sideNav(this,'home')">     🏠 Dashboard</button>
+            <button class="nav-chip"        data-nav="pomodoro" onclick="sideNav(this,'pomodoro')"> ⏱ Pomodoro</button>
+            <button class="nav-chip"        data-nav="todo"     onclick="sideNav(this,'todo')">     📝 To-Do</button>
+            <button class="nav-chip"        data-nav="grades"   onclick="sideNav(this,'grades')">   📊 Grades</button>
+            <button class="nav-chip"        data-nav="revision" onclick="sideNav(this,'revision')"> 📘 Revision</button>
+            <button class="nav-chip"        data-nav="notes"    onclick="sideNav(this,'notes')">    📓 Notes</button>
+            <button class="nav-chip"        data-nav="exams"    onclick="sideNav(this,'exams')">    🎓 Calendar</button>
+          </div>
+        </div>
+        <!-- ══ END INLINE NAV ══ -->
+
         <div id="homeView">
 
           <!-- SECTION A: Quick Access -->
@@ -171,6 +229,20 @@
               <span class="dash-section-count" id="subjCount"></span>
               <button class="dash-section-add" onclick="openAddSubjectSidebar()">＋ Add Subject</button>
             </div>
+
+            <!-- Subject input form (inline, shown when adding) -->
+            <div id="sbAddSubjectForm" style="display:none;flex-direction:column;gap:0.3rem;padding:0.2rem 0 0.6rem">
+              <div style="display:flex;gap:0.4rem;align-items:center">
+                <input type="text" id="sbSubjectInput" class="t-input"
+                       placeholder="Subject name…"
+                       style="height:28px;font-size:0.78rem;padding:0.2rem 0.6rem;flex:1" />
+                <button class="t-btn primary" onclick="confirmAddSubjectSidebar()"
+                        style="height:28px;font-size:0.72rem;padding:0 0.8rem">Add</button>
+                <button class="t-btn" onclick="cancelAddSubjectSidebar()"
+                        style="height:28px;font-size:0.72rem;padding:0 0.5rem">✕</button>
+              </div>
+            </div>
+
             <div class="folder-grid" id="subjectFolderGrid"></div>
             <div id="subjectFolderEmpty"
                  style="display:none;font-size:0.8rem;color:var(--ink-muted);font-style:italic;padding:0.8rem 0.2rem">
@@ -178,7 +250,37 @@
             </div>
           </div>
 
-        </div>
+          <!-- SECTION C: System -->
+          <div class="dash-section">
+            <div class="dash-section-heading">
+              <span class="dash-section-icon">⚙️</span> System
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="nav-chip" onclick="openCustomise(null)">🎨 New Folder</button>
+              <button class="nav-chip" onclick="openThemeEditor()">🖌️ Custom Theme</button>
+            </div>
+          </div>
+
+          <!-- SECTION D: Colour Palette -->
+          <div class="dash-section">
+            <div class="dash-section-heading">
+              <span class="dash-section-icon">🎨</span> Colour Palette
+            </div>
+            <div class="palette-panel" style="border:none;padding:0;background:none">
+              <div class="palette-panel-title">Folder themes</div>
+              <div class="palette-presets" id="palettePresets"></div>
+              <div class="palette-site-row" style="margin-top:0.6rem">
+                <span class="palette-site-label">Apply accent to site</span>
+                <label class="toggle-wrap">
+                  <input type="checkbox" id="siteThemeToggle" />
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /#homeView -->
       </div><!-- /content-scroll -->
 
       <!-- ── TOOL PANELS ── -->
@@ -329,27 +431,21 @@
         </div>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════
-           EXAMS PANEL
-      ═══════════════════════════════════════════════════ -->
+      <!-- EXAMS / CALENDAR -->
       <div class="tool-panel" id="panel-exams">
         <div class="tp-header">
           <span style="font-size:1.3rem">🎓</span>
-          <div><div class="tp-title">Calendar</div><div class="tp-sub">All your exams, countdowns & imports</div></div>
+          <div><div class="tp-title">Calendar</div><div class="tp-sub">All your exams, countdowns &amp; imports</div></div>
           <div style="display:flex;gap:0.5rem;margin-left:auto">
             <button class="t-btn" onclick="examOpenImport()" style="font-size:0.72rem;padding:0.25rem 0.75rem">⬇ Import</button>
             <button class="t-btn primary" onclick="examOpenForm()" style="font-size:0.72rem;padding:0.25rem 0.75rem">＋ Add</button>
           </div>
         </div>
-
-        <!-- TAB BAR -->
         <div class="exam-tabs">
           <button class="exam-tab active" id="examTabUpcoming" onclick="examSwitchTab('upcoming')">Upcoming</button>
           <button class="exam-tab"        id="examTabAll"      onclick="examSwitchTab('all')">All Exams</button>
           <button class="exam-tab"        id="examTabCalendar" onclick="examSwitchTab('calendar')">Calendar View</button>
         </div>
-
-        <!-- UPCOMING VIEW -->
         <div id="examViewUpcoming" class="tp-body exam-view">
           <div id="examCountdownStrip" class="exam-countdown-strip"></div>
           <div id="examUpcomingList"   class="exam-card-list"></div>
@@ -363,13 +459,9 @@
             </div>
           </div>
         </div>
-
-        <!-- ALL EXAMS VIEW -->
         <div id="examViewAll" class="tp-body exam-view" style="display:none">
           <div id="examAllList" class="exam-card-list"></div>
         </div>
-
-        <!-- CALENDAR VIEW -->
         <div id="examViewCalendar" class="tp-body exam-view" style="display:none">
           <div class="exam-cal-header">
             <button class="t-btn" onclick="examCalPrev()" style="font-size:0.8rem;padding:0.2rem 0.6rem">‹</button>
@@ -401,14 +493,8 @@
               <input type="text" id="examName" class="t-input" placeholder="e.g. Mathematics Paper 1" />
             </div>
             <div class="exam-form-row two-col">
-              <div>
-                <label>Date</label>
-                <input type="date" id="examDate" class="t-input" />
-              </div>
-              <div>
-                <label>Time</label>
-                <input type="time" id="examTime" class="t-input" />
-              </div>
+              <div><label>Date</label><input type="date" id="examDate" class="t-input" /></div>
+              <div><label>Time</label><input type="time" id="examTime" class="t-input" /></div>
             </div>
             <div class="exam-form-row two-col">
               <div>
@@ -455,24 +541,18 @@
             <button onclick="examCloseImport()" style="background:none;border:none;font-size:1.1rem;color:var(--ink-muted);cursor:pointer">✕</button>
           </div>
           <div class="exam-modal-body">
-
-            <!-- Import tabs -->
             <div class="import-source-tabs">
               <button class="import-src-tab active" onclick="examImportTab(this,'google')">Google Calendar</button>
               <button class="import-src-tab"        onclick="examImportTab(this,'apple')">Apple Calendar</button>
               <button class="import-src-tab"        onclick="examImportTab(this,'notion')">Notion</button>
             </div>
-
-            <!-- Google Calendar -->
             <div id="importSrcGoogle" class="import-src-body">
               <p class="import-help">Paste your Google Calendar <strong>iCal URL</strong>. In Google Calendar → Settings → your calendar → <em>Secret address in iCal format</em>.</p>
               <input type="url" id="gcalUrl" class="t-input" placeholder="https://calendar.google.com/calendar/ical/…" style="margin-bottom:0.6rem" />
               <p class="import-note">⚠️ Due to browser security, iCal URLs are fetched via a CORS proxy. Only paste URLs from your own calendars.</p>
-              <button class="t-btn primary" onclick="examImportGCal()" style="font-size:0.8rem">Fetch & Import</button>
+              <button class="t-btn primary" onclick="examImportGCal()" style="font-size:0.8rem">Fetch &amp; Import</button>
               <div id="gcalStatus" class="import-status"></div>
             </div>
-
-            <!-- Apple Calendar -->
             <div id="importSrcApple" class="import-src-body" style="display:none">
               <p class="import-help">Export your Apple Calendar as an <strong>.ics file</strong>: in Calendar app → File → Export → Export…, then upload it below.</p>
               <div class="import-dropzone" id="icsDropzone" onclick="document.getElementById('icsFileInput').click()">
@@ -483,17 +563,14 @@
               </div>
               <div id="icsStatus" class="import-status"></div>
             </div>
-
-            <!-- Notion -->
             <div id="importSrcNotion" class="import-src-body" style="display:none">
               <p class="import-help">Export your Notion database as <strong>CSV</strong> (••• menu → Export → CSV), then paste the contents below. Expected columns: <code>Name</code>, <code>Date</code>, <code>Time</code>, <code>Location</code>.</p>
               <textarea id="notionCsv" class="t-input" rows="6"
                 style="width:100%;resize:vertical;font-family:monospace;font-size:0.72rem"
-                placeholder="Name,Date,Time,Location&#10;Maths Paper 1,2026-06-10,09:00,Main Hall&#10;Biology,2026-06-12,14:00,Room 4"></textarea>
-              <button class="t-btn primary" onclick="examImportNotion()" style="font-size:0.8rem;margin-top:0.6rem">Parse & Import</button>
+                placeholder="Name,Date,Time,Location&#10;Maths Paper 1,2026-06-10,09:00,Main Hall"></textarea>
+              <button class="t-btn primary" onclick="examImportNotion()" style="font-size:0.8rem;margin-top:0.6rem">Parse &amp; Import</button>
               <div id="notionStatus" class="import-status"></div>
             </div>
-
           </div>
           <div class="exam-modal-footer">
             <button class="t-btn" onclick="examCloseImport()">Close</button>
@@ -501,10 +578,7 @@
         </div>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════
-           NOTES NOTEBOOK PANEL
-           Three levels: Subject shelf → Topic folders → Flashcard stack
-      ═══════════════════════════════════════════════════ -->
+      <!-- NOTES NOTEBOOK PANEL -->
       <div class="tool-panel" id="panel-notes">
         <div class="tp-header" id="notesHeader">
           <span style="font-size:1.3rem">📓</span>
@@ -512,91 +586,66 @@
             <div class="tp-title">Notes Notebook</div>
             <div class="tp-sub">All revision notes, organised by subject &amp; topic</div>
           </div>
-          <!-- Breadcrumb shown when drilling in -->
           <div id="notesBreadcrumb" style="display:none;margin-left:1rem;font-size:0.74rem;color:var(--ink-muted);display:flex;align-items:center;gap:0.4rem"></div>
-          <!-- "View as Flashcards" button shown at topic level -->
           <button id="notesFlashcardBtn" class="t-btn primary"
                   style="display:none;margin-left:auto;font-size:0.74rem;padding:0.3rem 0.9rem"
                   onclick="enterFlashcardMode()">⚡ Flashcard Mode</button>
-          <!-- Back button shown when inside topic or flashcard view -->
           <button id="notesBackBtn" class="t-btn"
                   style="display:none;margin-left:auto;font-size:0.74rem;padding:0.3rem 0.9rem"
                   onclick="notesGoBack()">← Back</button>
         </div>
-
-        <!-- LEVEL 1: Subject shelf -->
         <div id="notesSubjectView" class="tp-body">
           <div id="notesSubjectGrid" class="nt-subject-grid"></div>
         </div>
-
-        <!-- LEVEL 2: Topic folders inside a subject -->
         <div id="notesTopicView" class="tp-body" style="display:none">
           <div id="notesTopicGrid" class="nt-topic-grid"></div>
         </div>
-
-        <!-- LEVEL 3: Notes stack inside a topic -->
-        <div id="notesStackView" style="display:none;flex:1;overflow:hidden;display:none;flex-direction:column">
-          <!-- Toolbar: note count + action buttons -->
+        <div id="notesStackView" style="display:none;flex:1;overflow:hidden;flex-direction:column">
           <div style="display:flex;align-items:center;gap:0.7rem;padding:0.5rem 1.2rem;border-bottom:1px solid var(--rule);background:var(--bg-card);flex-shrink:0">
             <span id="notesStackCount" style="font-size:0.72rem;color:var(--ink-muted)"></span>
             <div style="display:flex;gap:0.5rem;margin-left:auto">
-              <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.7rem"
-                      onclick="ntOpenWrittenNoteEditor()">✏️ Write a Note</button>
-              <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.7rem"
-                      onclick="notesQuickUpload()">📎 Upload Image</button>
+              <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.7rem" onclick="ntOpenWrittenNoteEditor()">✏️ Write a Note</button>
+              <button class="t-btn" style="font-size:0.72rem;padding:0.25rem 0.7rem" onclick="notesQuickUpload()">📎 Upload Image</button>
             </div>
           </div>
-          <!-- Scrollable stack of full-size images/notes -->
           <div id="notesStackScroll" class="nt-stack-scroll"></div>
         </div>
-
-        <!-- LEVEL 3c: Written note editor (inline Notion-style) -->
         <div id="notesWriterView" style="display:none;flex:1;overflow:hidden;flex-direction:column">
-          <!-- Editor toolbar -->
           <div class="nt-writer-toolbar">
             <button class="wfmt-btn" onclick="ntWExec('bold')" title="Bold"><b>B</b></button>
             <button class="wfmt-btn" onclick="ntWExec('italic')" title="Italic"><i>I</i></button>
             <button class="wfmt-btn" onclick="ntWExec('underline')" title="Underline"><u>U</u></button>
             <button class="wfmt-btn" onclick="ntWExec('strikeThrough')" title="Strikethrough"><s>S</s></button>
             <div class="wfmt-sep"></div>
-            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h1')" title="Heading 1">H1</button>
-            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h2')" title="Heading 2">H2</button>
-            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h3')" title="Heading 3">H3</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h1')" title="H1">H1</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h2')" title="H2">H2</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h3')" title="H3">H3</button>
             <button class="wfmt-btn" onclick="ntWExec('formatBlock','p')"  title="Paragraph">¶</button>
             <div class="wfmt-sep"></div>
-            <button class="wfmt-btn" onclick="ntWExec('insertUnorderedList')" title="Bullet list">• List</button>
-            <button class="wfmt-btn" onclick="ntWExec('insertOrderedList')"   title="Numbered list">1. List</button>
+            <button class="wfmt-btn" onclick="ntWExec('insertUnorderedList')">• List</button>
+            <button class="wfmt-btn" onclick="ntWExec('insertOrderedList')">1. List</button>
             <div class="wfmt-sep"></div>
-            <button class="wfmt-btn" onclick="ntInsertCallout('info')"    title="Info callout">💡</button>
-            <button class="wfmt-btn" onclick="ntInsertCallout('warning')" title="Warning callout">⚠️</button>
-            <button class="wfmt-btn" onclick="ntInsertCallout('success')" title="Success callout">✅</button>
+            <button class="wfmt-btn" onclick="ntInsertCallout('info')">💡</button>
+            <button class="wfmt-btn" onclick="ntInsertCallout('warning')">⚠️</button>
+            <button class="wfmt-btn" onclick="ntInsertCallout('success')">✅</button>
             <div class="wfmt-sep"></div>
-            <button class="wfmt-btn" onclick="ntWExec('insertHorizontalRule')" title="Divider">—</button>
+            <button class="wfmt-btn" onclick="ntWExec('insertHorizontalRule')">—</button>
             <div class="wfmt-sep" style="margin-left:auto"></div>
-            <button class="t-btn primary" id="ntWriterSaveBtn" onclick="ntSaveWrittenNote()"
-                    style="font-size:0.72rem;padding:0.25rem 0.8rem">Save Note</button>
-            <button class="t-btn" onclick="ntCancelWrittenNote()"
-                    style="font-size:0.72rem;padding:0.25rem 0.7rem">Cancel</button>
+            <button class="t-btn primary" id="ntWriterSaveBtn" onclick="ntSaveWrittenNote()" style="font-size:0.72rem;padding:0.25rem 0.8rem">Save Note</button>
+            <button class="t-btn" onclick="ntCancelWrittenNote()" style="font-size:0.72rem;padding:0.25rem 0.7rem">Cancel</button>
           </div>
-          <!-- Title input -->
           <div style="padding:1.2rem 10% 0;background:var(--bg);border-bottom:1px solid var(--rule);flex-shrink:0">
-            <input type="text" id="ntWriterTitle" class="nt-writer-title-inp"
-                   placeholder="Note title…" />
+            <input type="text" id="ntWriterTitle" class="nt-writer-title-inp" placeholder="Note title…" />
           </div>
-          <!-- Editable body -->
           <div class="nt-writer-body">
-            <div id="ntWriterEditor" class="nt-writer-editor"
-                 contenteditable="true"
-                 data-placeholder="Start writing your note… use the toolbar to format, or just type."></div>
+            <div id="ntWriterEditor" class="nt-writer-editor" contenteditable="true"
+                 data-placeholder="Start writing your note…"></div>
           </div>
-          <!-- Save indicator -->
           <div style="display:flex;align-items:center;gap:0.7rem;padding:0.3rem 10%;background:var(--bg-card);border-top:1px solid var(--rule);font-size:0.62rem;color:var(--ink-muted);flex-shrink:0">
             <span id="ntWriterStatus">Unsaved</span>
             <span style="margin-left:auto">Ctrl+S to save</span>
           </div>
         </div>
-
-        <!-- LEVEL 3b: Flashcard mode -->
         <div id="notesFlashcardView" style="display:none;flex:1;overflow:hidden;flex-direction:column">
           <div style="display:flex;align-items:center;justify-content:center;gap:1.2rem;padding:0.6rem 1.2rem;border-bottom:1px solid var(--rule);background:var(--bg-card);flex-shrink:0">
             <span id="fcCounter" style="font-size:0.78rem;color:var(--ink-muted)">1 / 1</span>
@@ -606,7 +655,6 @@
           </div>
           <div id="notesFlashcardScroll" class="nt-flashcard-scroll"></div>
         </div>
-
       </div>
 
       <!-- SUBJECT OVERVIEW -->
@@ -624,15 +672,6 @@
       </div>
 
     </div><!-- /main-area -->
-
-    <!-- ── RIGHT DETAIL PANEL ── -->
-    <div class="detail-panel" id="detailPanel">
-      <div class="detail-inner" id="detailInner">
-        <div style="font-size:0.72rem;color:var(--ink-muted);font-style:italic;text-align:center;margin-top:2rem;line-height:1.6">
-          Select a folder<br>to see details
-        </div>
-      </div>
-    </div>
 
   </div><!-- /explorer -->
 
@@ -703,64 +742,11 @@
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════
-       POMODORO FULLSCREEN OVERLAY
-  ═══════════════════════════════════════════════════ -->
+  <!-- POMODORO FULLSCREEN OVERLAY -->
   <div id="pomFullscreen" class="pom-fs-overlay">
-
-    <!-- Top bar: subject name + minimise -->
     <div class="pom-fs-topbar">
       <span id="pomFsSubject" class="pom-fs-subject-label"></span>
       <button class="pom-fs-minimise" onclick="pomExitFullscreen()" title="Minimise">⌃ Minimise</button>
-    </div>
-
-    <!-- Centre: big ring -->
-    <div class="pom-fs-centre">
-      <div class="pom-fs-ring-wrap">
-        <svg viewBox="0 0 260 260" class="pom-fs-svg">
-          <circle class="pom-fs-ring-fill" cx="130" cy="130" r="110"/>
-          <circle class="pom-fs-bg"        cx="130" cy="130" r="118"/>
-          <circle class="pom-fs-progress"  cx="130" cy="130" r="118"/>
-        </svg>
-        <div class="pom-fs-time"  id="pomFsDisplay">25:00</div>
-        <div class="pom-fs-label" id="pomFsLabel">focus</div>
-      </div>
-
-      <!-- Controls -->
-      <div class="pom-fs-controls">
-        <button class="pom-fs-btn secondary" id="pomFsReset"  onclick="pomFsDoReset()">↺ Reset</button>
-        <button class="pom-fs-btn primary"   id="pomFsToggle" onclick="pomFsDoToggle()">⏸ Pause</button>
-        <button class="pom-fs-btn secondary" id="pomFsSkip"   onclick="pomFsDoSkip()">⏭ Skip</button>
-      </div>
-    </div>
-
-    <!-- Bottom: session stats row -->
-    <div class="pom-fs-stats">
-      <div class="pom-fs-stat">
-        <div class="pom-fs-stat-num" id="pomFsHours">00</div>
-        <div class="pom-fs-stat-unit">hrs studied</div>
-      </div>
-      <div class="pom-fs-stat-divider"></div>
-      <div class="pom-fs-stat">
-        <div class="pom-fs-stat-num" id="pomFsMins">00</div>
-        <div class="pom-fs-stat-unit">min studied</div>
-      </div>
-      <div class="pom-fs-stat-divider"></div>
-      <div class="pom-fs-stat">
-        <div class="pom-fs-stat-num" id="pomFsSessions">0</div>
-        <div class="pom-fs-stat-unit">sessions today</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════
-       POMODORO FULLSCREEN OVERLAY
-  ═══════════════════════════════════════════════════ -->
-  <div id="pomFullscreen" class="pom-fs-overlay">
-    <div class="pom-fs-topbar">
-      <span id="pomFsSubject" class="pom-fs-subject-label"></span>
-      <button class="pom-fs-minimise" onclick="pomExitFullscreen()">⌃ Minimise</button>
     </div>
     <div class="pom-fs-centre">
       <div class="pom-fs-ring-wrap">
@@ -788,32 +774,69 @@
   </div>
 
   <script type="module" src="dashboard.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-  }
-</script>
-<script>
-  // Make functions available immediately for onclick attributes
-  // These are set as soon as the module runs
-  const _ready = () => {
-    const fns = ['sideNav','openFolder','showHome','openCustomise','closeModal',
-      'applyCustomise','ctxOpen','ctxCustomise','ctxRename','ctxDelete',
-      'openThemeEditor','closeThemeEditor','applyTheme','resetTheme','setView',
-      'toggleDetail','openAddSubjectSidebar','confirmAddSubjectSidebar',
-      'cancelAddSubjectSidebar','openSubjectPanel','examSwitchTab','examOpenForm',
-      'examCloseForm','examSaveForm','examDelete','examCalPrev','examCalNext',
-      'examOpenImport','examCloseImport','examImportTab','examImportGCal',
-      'examImportICS','examImportNotion','ntOpenWrittenNoteEditor','ntSaveWrittenNote',
-      'ntCancelWrittenNote','ntWExec','ntInsertCallout','notesGoBack','notesQuickUpload',
-      'enterFlashcardMode','fcStep','fcShuffle','renderNotesSubjectView','openNotesSubject',
-      'pomEnterFullscreen','pomExitFullscreen','pomFsDoToggle','pomFsDoReset','pomFsDoSkip',
-      'quickStartSubject','openSubjFolderCustomise','calRender','examCalShowDay',
-      'revFullscreen','ctxRenameSubj','ctxDeleteSubj','openSubjFolderCustomise'];
-    if (fns.every(f => window[f])) return;
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+
+  <script>
+    /* ── Inline nav collapse toggle ── */
+    function toggleInlineNav() {
+      document.getElementById('inlineNav').classList.toggle('open');
+    }
+
+    /* ── Profile modal helpers (wired to onclick) ── */
+    function openProfile()  { document.getElementById('profileModal').style.display = 'flex'; }
+    function closeProfile() { document.getElementById('profileModal').style.display = 'none'; }
+
+    /* ── Nav chip active state + panel switching ──
+       This runs immediately and also patches window.sideNav once the
+       dashboard module loads its own version.                          */
+    function _activateChip(nav) {
+      document.querySelectorAll('.nav-chip').forEach(c => c.classList.remove('active'));
+      const chip = document.querySelector(`.nav-chip[data-nav="${nav}"]`);
+      if (chip) chip.classList.add('active');
+    }
+
+    /* Patch: wrap dashboard.js sideNav to also update chip states */
+    const _patchSideNav = () => {
+      if (typeof window.sideNav === 'function') {
+        const _orig = window.sideNav;
+        window.sideNav = function(el, nav) {
+          _activateChip(nav);
+          _orig(el, nav);
+        };
+        return;
+      }
+      setTimeout(_patchSideNav, 80);
+    };
+    setTimeout(_patchSideNav, 80);
+
+    /* Ensure all onclick="sideNav(this,'x')" calls on chips also work
+       even before the module loads (they queue until the module exposes
+       sideNav on window, which the existing _ready loop already handles). */
+
+    /* ── Deferred function availability check (from original) ── */
+    const _ready = () => {
+      const fns = ['sideNav','openFolder','showHome','openCustomise','closeModal',
+        'applyCustomise','ctxOpen','ctxCustomise','ctxRename','ctxDelete',
+        'openThemeEditor','closeThemeEditor','applyTheme','resetTheme','setView',
+        'toggleDetail','openAddSubjectSidebar','confirmAddSubjectSidebar',
+        'cancelAddSubjectSidebar','openSubjectPanel','examSwitchTab','examOpenForm',
+        'examCloseForm','examSaveForm','examDelete','examCalPrev','examCalNext',
+        'examOpenImport','examCloseImport','examImportTab','examImportGCal',
+        'examImportICS','examImportNotion','ntOpenWrittenNoteEditor','ntSaveWrittenNote',
+        'ntCancelWrittenNote','ntWExec','ntInsertCallout','notesGoBack','notesQuickUpload',
+        'enterFlashcardMode','fcStep','fcShuffle','renderNotesSubjectView','openNotesSubject',
+        'pomEnterFullscreen','pomExitFullscreen','pomFsDoToggle','pomFsDoReset','pomFsDoSkip',
+        'quickStartSubject','openSubjFolderCustomise','calRender','examCalShowDay',
+        'revFullscreen','ctxRenameSubj','ctxDeleteSubj'];
+      if (fns.every(f => window[f])) return;
+      setTimeout(_ready, 50);
+    };
     setTimeout(_ready, 50);
-  };
-  setTimeout(_ready, 50);
-</script>
+  </script>
 </body>
 </html>
