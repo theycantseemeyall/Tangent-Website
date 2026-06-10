@@ -12,99 +12,65 @@
   <meta name="apple-mobile-web-app-title" content="Tangent">
 
   <style>
-    /* ── Inline nav panel inside explorer ── */
-    .inline-nav {
-      border: 1px solid var(--rule);
-      border-radius: 8px;
-      background: var(--bg-card);
-      margin-bottom: 1rem;
-      overflow: hidden;
-    }
-    .inline-nav-header {
+    /* ── Student card at top of sidebar ── */
+    .sb-student-card {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0.55rem 0.9rem;
-      cursor: pointer;
-      user-select: none;
-      border-bottom: 1px solid transparent;
-      transition: border-color 0.15s;
-    }
-    .inline-nav-header:hover { background: var(--bg-inset); }
-    .inline-nav.open .inline-nav-header { border-bottom-color: var(--rule); }
-    .inline-nav-title {
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      font-weight: 600;
-    }
-    .inline-nav-arrow {
-      font-size: 0.65rem;
-      color: var(--ink-muted);
-      transition: transform 0.2s;
-    }
-    .inline-nav.open .inline-nav-arrow { transform: rotate(180deg); }
-    .inline-nav-body {
-      display: none;
-      padding: 0.4rem 0.5rem;
-      flex-wrap: wrap;
-      gap: 0.3rem;
-    }
-    .inline-nav.open .inline-nav-body { display: flex; }
-    .nav-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      padding: 0.3rem 0.75rem;
-      border-radius: 20px;
-      font-size: 0.75rem;
+      gap: 0.6rem;
+      padding: 0.7rem 0.85rem;
+      margin: 0.5rem 0.5rem 0.25rem;
+      border-radius: 8px;
+      background: var(--bg-inset);
       border: 1px solid var(--rule);
-      background: var(--bg);
-      color: var(--ink);
       cursor: pointer;
-      transition: background 0.12s, border-color 0.12s, color 0.12s;
-      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
     }
-    .nav-chip:hover { background: var(--bg-inset); border-color: var(--accent); }
-    .nav-chip.active {
+    .sb-student-card:hover { background: var(--bg-card); border-color: var(--accent); }
+    .sb-student-avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
       background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+      opacity: 0.8;
     }
+    .sb-student-info { min-width: 0; flex: 1; }
+    .sb-student-name {
+      font-size: 0.79rem; font-weight: 600; color: var(--ink);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sb-student-role { font-size: 0.63rem; color: var(--ink-muted); margin-top: 0.05rem; }
+    .sb-student-gear { font-size: 0.72rem; color: var(--ink-muted); flex-shrink: 0; opacity: 0.55; }
 
-    /* ── Remove the old left sidebar (it still exists in the DOM but we hide it) ── */
-    .sidebar { display: none !important; }
+    /* ── Collapsible sidebar sections ── */
+    .sb-section { margin-top: 0.1rem; }
+    .sb-section-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.32rem 0.9rem 0.2rem;
+      cursor: pointer; user-select: none;
+    }
+    .sb-section-toggle:hover .sb-heading { color: var(--ink); }
+    .sb-section-arrow {
+      font-size: 0.55rem; color: var(--ink-muted);
+      transition: transform 0.18s; line-height: 1;
+    }
+    .sb-section.collapsed .sb-section-arrow { transform: rotate(-90deg); }
+    .sb-section.collapsed .sb-section-body { display: none; }
 
-    /* ── Make the main-area fill the full width now the sidebar is gone ── */
-    .explorer { display: flex; flex-direction: column; }
-    .main-area { flex: 1; min-width: 0; }
-    .detail-panel { display: none; } /* keep hidden for now so layout is clean */
-
-    /* ── Subjects section header ── */
+    /* ── Dash section headings ── */
     .dash-section { margin-bottom: 1.4rem; }
     .dash-section-heading {
-      display: flex;
-      align-items: center;
-      gap: 0.45rem;
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--ink-muted);
-      font-weight: 600;
-      margin-bottom: 0.6rem;
-      padding-bottom: 0.3rem;
+      display: flex; align-items: center; gap: 0.45rem;
+      font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--ink-muted); font-weight: 600;
+      margin-bottom: 0.6rem; padding-bottom: 0.3rem;
       border-bottom: 1px solid var(--rule);
     }
     .dash-section-add {
-      margin-left: auto;
-      font-size: 0.68rem;
-      padding: 0.15rem 0.6rem;
-      background: none;
-      border: 1px solid var(--rule);
-      border-radius: 4px;
-      color: var(--ink-muted);
-      cursor: pointer;
+      margin-left: auto; font-size: 0.68rem; padding: 0.15rem 0.6rem;
+      background: none; border: 1px solid var(--rule); border-radius: 4px;
+      color: var(--ink-muted); cursor: pointer;
       transition: color 0.12s, border-color 0.12s;
     }
     .dash-section-add:hover { color: var(--accent); border-color: var(--accent); }
@@ -112,9 +78,7 @@
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════════════════
-       TITLE BAR
-  ═══════════════════════════════════════════════════ -->
+  <!-- TITLE BAR -->
   <div class="titlebar">
     <div class="titlebar-left">
       <button class="win-btn win-close" onclick="window.location.href='index.html'" title="Back to home"></button>
@@ -128,42 +92,37 @@
     </div>
     <div class="titlebar-center">Tangent<span>.</span></div>
     <div class="titlebar-right">
-      <div id="profileBox" class="profile-box" title="Open profile" onclick="openProfile()">
-        <span class="profile-avatar">👤</span>
-        <span id="profileName">Student</span>
-      </div>
       <span id="clock">--:--:--</span>
       <button class="tb-pill" id="fmtToggle">24H</button>
       <button class="tb-pill" id="themeToggle">🌙</button>
     </div>
   </div>
 
-  <!-- Profile Modal -->
+  <!-- Student Settings Modal -->
   <div id="profileModal" class="modal-bg" style="display:none">
     <div class="modal-box" style="max-width:420px">
       <button class="modal-close" onclick="closeProfile()">✕</button>
-      <div class="modal-title">User Profile</div>
+      <div class="modal-title">Student Settings</div>
       <div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem">
-        <div style="font-size:2.5rem">👤</div>
+        <div style="width:46px;height:46px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.4rem;opacity:0.8">👤</div>
         <div>
-          <div id="profileFullName" style="font-weight:600">Student</div>
+          <div id="profileFullName" style="font-weight:600;font-size:0.95rem">Student</div>
           <div id="profileEmail" style="font-size:0.75rem;color:var(--ink-muted)">student@email.com</div>
         </div>
       </div>
       <div class="sb-divider"></div>
-      <div style="display:flex;flex-direction:column;gap:0.5rem">
-        <button class="t-btn">⚙ Account Settings</button>
-        <button class="t-btn">🎨 Appearance</button>
-        <button class="t-btn">🔐 Privacy</button>
-        <button class="t-btn">📊 Study Stats</button>
-        <button class="t-btn" id="signOutBtn">🚪 Sign Out</button>
+      <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.5rem">
+        <button class="t-btn">⚙️ &nbsp;Account Settings</button>
+        <button class="t-btn">🎨 &nbsp;Appearance</button>
+        <button class="t-btn">🔐 &nbsp;Privacy</button>
+        <button class="t-btn">📊 &nbsp;Study Stats</button>
+        <div class="sb-divider"></div>
+        <button class="t-btn" id="signOutBtn" style="color:var(--red,#c0392b)">🚪 &nbsp;Sign Out</button>
       </div>
     </div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════
-       TOOLBAR
-  ═══════════════════════════════════════════════════ -->
+  <!-- TOOLBAR -->
   <div class="toolbar">
     <button class="toolbar-btn" onclick="showHome()" title="Home">⌂</button>
     <div class="address-bar">
@@ -174,12 +133,112 @@
     <button class="toolbar-btn" onclick="toggleDetail()" title="Toggle info panel">⊟</button>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════
-       EXPLORER BODY  (sidebar removed, nav moved inline)
-  ═══════════════════════════════════════════════════ -->
+  <!-- EXPLORER BODY -->
   <div class="explorer">
 
-    <!-- ── MAIN CONTENT ── -->
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+
+      <!-- Student card -->
+      <div class="sb-student-card" onclick="openProfile()" title="Open student settings">
+        <div class="sb-student-avatar">👤</div>
+        <div class="sb-student-info">
+          <div class="sb-student-name" id="sbStudentName">Student</div>
+          <div class="sb-student-role">My account</div>
+        </div>
+        <span class="sb-student-gear">⚙</span>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- Quick Access — collapsible -->
+      <div class="sb-section" id="sbSectionNav">
+        <div class="sb-section-toggle" onclick="toggleSbSection('sbSectionNav')">
+          <div class="sb-heading" style="padding:0">Quick Access</div>
+          <span class="sb-section-arrow">▾</span>
+        </div>
+        <div class="sb-section-body">
+          <div class="sb-item active" data-nav="home"     onclick="sideNav(this,'home')">     <span class="si">🏠</span> Dashboard</div>
+          <div class="sb-item"        data-nav="pomodoro" onclick="sideNav(this,'pomodoro')"> <span class="si">⏱</span> Pomodoro</div>
+          <div class="sb-item"        data-nav="todo"     onclick="sideNav(this,'todo')">     <span class="si">📝</span> To-Do</div>
+          <div class="sb-item"        data-nav="grades"   onclick="sideNav(this,'grades')">   <span class="si">📊</span> Grades</div>
+          <div class="sb-item"        data-nav="revision" onclick="sideNav(this,'revision')"> <span class="si">📘</span> Revision</div>
+          <div class="sb-item"        data-nav="notes"    onclick="sideNav(this,'notes')">    <span class="si">📓</span> Notes</div>
+          <div class="sb-item"        data-nav="exams"    onclick="sideNav(this,'exams')">    <span class="si">🎓</span> Calendar</div>
+        </div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- Subjects — collapsible -->
+      <div class="sb-section" id="sbSectionSubjects">
+        <div class="sb-section-toggle" onclick="toggleSbSection('sbSectionSubjects')">
+          <div class="sb-heading" style="padding:0">Subjects</div>
+          <div style="display:flex;align-items:center;gap:0.35rem">
+            <button onclick="event.stopPropagation();openAddSubjectSidebar()" title="Add subject"
+                    style="background:none;border:none;color:var(--ink-muted);font-size:0.75rem;cursor:pointer;padding:0;line-height:1;transition:color 0.15s"
+                    onmouseenter="this.style.color='var(--accent)'"
+                    onmouseleave="this.style.color='var(--ink-muted)'">＋</button>
+            <span class="sb-section-arrow">▾</span>
+          </div>
+        </div>
+        <div class="sb-section-body">
+          <div id="sbAddSubjectForm" style="display:none;flex-direction:column;gap:0.3rem;padding:0.2rem 0.7rem 0.4rem">
+            <input type="text" id="sbSubjectInput" class="t-input"
+                   placeholder="Subject name…"
+                   style="height:26px;font-size:0.76rem;padding:0.2rem 0.5rem" />
+            <div style="display:flex;gap:0.3rem">
+              <button class="t-btn primary" onclick="confirmAddSubjectSidebar()"
+                      style="flex:1;height:24px;font-size:0.7rem;padding:0">Add</button>
+              <button class="t-btn" onclick="cancelAddSubjectSidebar()"
+                      style="height:24px;font-size:0.7rem;padding:0 0.4rem">✕</button>
+            </div>
+          </div>
+          <div id="sbSubjectList"></div>
+        </div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- System — collapsible -->
+      <div class="sb-section" id="sbSectionSystem">
+        <div class="sb-section-toggle" onclick="toggleSbSection('sbSectionSystem')">
+          <div class="sb-heading" style="padding:0">System</div>
+          <span class="sb-section-arrow">▾</span>
+        </div>
+        <div class="sb-section-body">
+          <div class="sb-item" onclick="openCustomise(null)"><span class="si">🎨</span> New Folder</div>
+          <div class="sb-item" onclick="openThemeEditor()"><span class="si">🖌️</span> Custom Theme</div>
+        </div>
+      </div>
+
+      <div class="sb-divider"></div>
+
+      <!-- Colour Palette — collapsible -->
+      <div class="sb-section" id="sbSectionPalette">
+        <div class="sb-section-toggle" onclick="toggleSbSection('sbSectionPalette')">
+          <div class="sb-heading" style="padding:0">Colour Palette</div>
+          <span class="sb-section-arrow">▾</span>
+        </div>
+        <div class="sb-section-body">
+          <div class="palette-panel">
+            <div class="palette-panel-title">Folder themes</div>
+            <div class="palette-presets" id="palettePresets"></div>
+            <div class="palette-site-row">
+              <span class="palette-site-label">Apply accent to site</span>
+              <label class="toggle-wrap">
+                <input type="checkbox" id="siteThemeToggle" />
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /sidebar -->
+
+    <!-- MAIN CONTENT -->
     <div class="main-area">
 
       <div class="view-bar">
@@ -192,28 +251,8 @@
       </div>
 
       <div class="content-scroll" id="contentScroll">
-
-        <!-- ══ INLINE NAV (replaces sidebar) ══ -->
-        <div class="inline-nav open" id="inlineNav">
-          <div class="inline-nav-header" onclick="toggleInlineNav()">
-            <span class="inline-nav-title">Navigation</span>
-            <span class="inline-nav-arrow">▼</span>
-          </div>
-          <div class="inline-nav-body">
-            <button class="nav-chip active" data-nav="home"     onclick="sideNav(this,'home')">     🏠 Dashboard</button>
-            <button class="nav-chip"        data-nav="pomodoro" onclick="sideNav(this,'pomodoro')"> ⏱ Pomodoro</button>
-            <button class="nav-chip"        data-nav="todo"     onclick="sideNav(this,'todo')">     📝 To-Do</button>
-            <button class="nav-chip"        data-nav="grades"   onclick="sideNav(this,'grades')">   📊 Grades</button>
-            <button class="nav-chip"        data-nav="revision" onclick="sideNav(this,'revision')"> 📘 Revision</button>
-            <button class="nav-chip"        data-nav="notes"    onclick="sideNav(this,'notes')">    📓 Notes</button>
-            <button class="nav-chip"        data-nav="exams"    onclick="sideNav(this,'exams')">    🎓 Calendar</button>
-          </div>
-        </div>
-        <!-- ══ END INLINE NAV ══ -->
-
         <div id="homeView">
 
-          <!-- SECTION A: Quick Access -->
           <div class="dash-section">
             <div class="dash-section-heading">
               <span class="dash-section-icon">⚡</span> Quick Access
@@ -222,27 +261,12 @@
             <div class="folder-grid" id="folderGrid"></div>
           </div>
 
-          <!-- SECTION B: Subjects -->
           <div class="dash-section">
             <div class="dash-section-heading">
               <span class="dash-section-icon">📚</span> Subjects
               <span class="dash-section-count" id="subjCount"></span>
               <button class="dash-section-add" onclick="openAddSubjectSidebar()">＋ Add Subject</button>
             </div>
-
-            <!-- Subject input form (inline, shown when adding) -->
-            <div id="sbAddSubjectForm" style="display:none;flex-direction:column;gap:0.3rem;padding:0.2rem 0 0.6rem">
-              <div style="display:flex;gap:0.4rem;align-items:center">
-                <input type="text" id="sbSubjectInput" class="t-input"
-                       placeholder="Subject name…"
-                       style="height:28px;font-size:0.78rem;padding:0.2rem 0.6rem;flex:1" />
-                <button class="t-btn primary" onclick="confirmAddSubjectSidebar()"
-                        style="height:28px;font-size:0.72rem;padding:0 0.8rem">Add</button>
-                <button class="t-btn" onclick="cancelAddSubjectSidebar()"
-                        style="height:28px;font-size:0.72rem;padding:0 0.5rem">✕</button>
-              </div>
-            </div>
-
             <div class="folder-grid" id="subjectFolderGrid"></div>
             <div id="subjectFolderEmpty"
                  style="display:none;font-size:0.8rem;color:var(--ink-muted);font-style:italic;padding:0.8rem 0.2rem">
@@ -250,40 +274,8 @@
             </div>
           </div>
 
-          <!-- SECTION C: System -->
-          <div class="dash-section">
-            <div class="dash-section-heading">
-              <span class="dash-section-icon">⚙️</span> System
-            </div>
-            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-              <button class="nav-chip" onclick="openCustomise(null)">🎨 New Folder</button>
-              <button class="nav-chip" onclick="openThemeEditor()">🖌️ Custom Theme</button>
-            </div>
-          </div>
-
-          <!-- SECTION D: Colour Palette -->
-          <div class="dash-section">
-            <div class="dash-section-heading">
-              <span class="dash-section-icon">🎨</span> Colour Palette
-            </div>
-            <div class="palette-panel" style="border:none;padding:0;background:none">
-              <div class="palette-panel-title">Folder themes</div>
-              <div class="palette-presets" id="palettePresets"></div>
-              <div class="palette-site-row" style="margin-top:0.6rem">
-                <span class="palette-site-label">Apply accent to site</span>
-                <label class="toggle-wrap">
-                  <input type="checkbox" id="siteThemeToggle" />
-                  <div class="toggle-track"></div>
-                  <div class="toggle-thumb"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-
-        </div><!-- /#homeView -->
-      </div><!-- /content-scroll -->
-
-      <!-- ── TOOL PANELS ── -->
+        </div>
+      </div>
 
       <!-- POMODORO -->
       <div class="tool-panel" id="panel-pomodoro">
@@ -414,9 +406,7 @@
                onmouseleave="this.style.borderColor=''">
             <div class="upload-icon">📸</div>
             <div>Click to upload note images or PDFs</div>
-            <div style="font-size:0.66rem;color:var(--ink-muted);margin-top:0.2rem">
-              Images, PDFs accepted · tagged to selected subject &amp; category
-            </div>
+            <div style="font-size:0.66rem;color:var(--ink-muted);margin-top:0.2rem">Images, PDFs accepted · tagged to selected subject &amp; category</div>
             <input type="file" id="noteUpload" multiple accept="image/*,.pdf" style="display:none"/>
           </label>
           <div>
@@ -500,12 +490,9 @@
               <div>
                 <label>Duration</label>
                 <select id="examDuration" class="t-input">
-                  <option value="60">1 hour</option>
-                  <option value="90">1.5 hours</option>
-                  <option value="120" selected>2 hours</option>
-                  <option value="150">2.5 hours</option>
-                  <option value="180">3 hours</option>
-                  <option value="0">Unknown</option>
+                  <option value="60">1 hour</option><option value="90">1.5 hours</option>
+                  <option value="120" selected>2 hours</option><option value="150">2.5 hours</option>
+                  <option value="180">3 hours</option><option value="0">Unknown</option>
                 </select>
               </div>
               <div>
@@ -554,7 +541,7 @@
               <div id="gcalStatus" class="import-status"></div>
             </div>
             <div id="importSrcApple" class="import-src-body" style="display:none">
-              <p class="import-help">Export your Apple Calendar as an <strong>.ics file</strong>: in Calendar app → File → Export → Export…, then upload it below.</p>
+              <p class="import-help">Export your Apple Calendar as an <strong>.ics file</strong>: in Calendar app → File → Export → Export…, then upload below.</p>
               <div class="import-dropzone" id="icsDropzone" onclick="document.getElementById('icsFileInput').click()">
                 <div style="font-size:2rem;margin-bottom:0.4rem">📁</div>
                 <div>Click to upload .ics file</div>
@@ -578,7 +565,7 @@
         </div>
       </div>
 
-      <!-- NOTES NOTEBOOK PANEL -->
+      <!-- NOTES NOTEBOOK -->
       <div class="tool-panel" id="panel-notes">
         <div class="tp-header" id="notesHeader">
           <span style="font-size:1.3rem">📓</span>
@@ -612,15 +599,15 @@
         </div>
         <div id="notesWriterView" style="display:none;flex:1;overflow:hidden;flex-direction:column">
           <div class="nt-writer-toolbar">
-            <button class="wfmt-btn" onclick="ntWExec('bold')" title="Bold"><b>B</b></button>
-            <button class="wfmt-btn" onclick="ntWExec('italic')" title="Italic"><i>I</i></button>
-            <button class="wfmt-btn" onclick="ntWExec('underline')" title="Underline"><u>U</u></button>
-            <button class="wfmt-btn" onclick="ntWExec('strikeThrough')" title="Strikethrough"><s>S</s></button>
+            <button class="wfmt-btn" onclick="ntWExec('bold')"><b>B</b></button>
+            <button class="wfmt-btn" onclick="ntWExec('italic')"><i>I</i></button>
+            <button class="wfmt-btn" onclick="ntWExec('underline')"><u>U</u></button>
+            <button class="wfmt-btn" onclick="ntWExec('strikeThrough')"><s>S</s></button>
             <div class="wfmt-sep"></div>
-            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h1')" title="H1">H1</button>
-            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h2')" title="H2">H2</button>
-            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h3')" title="H3">H3</button>
-            <button class="wfmt-btn" onclick="ntWExec('formatBlock','p')"  title="Paragraph">¶</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h1')">H1</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h2')">H2</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','h3')">H3</button>
+            <button class="wfmt-btn" onclick="ntWExec('formatBlock','p')">¶</button>
             <div class="wfmt-sep"></div>
             <button class="wfmt-btn" onclick="ntWExec('insertUnorderedList')">• List</button>
             <button class="wfmt-btn" onclick="ntWExec('insertOrderedList')">1. List</button>
@@ -639,7 +626,7 @@
           </div>
           <div class="nt-writer-body">
             <div id="ntWriterEditor" class="nt-writer-editor" contenteditable="true"
-                 data-placeholder="Start writing your note…"></div>
+                 data-placeholder="Start writing your note… use the toolbar to format, or just type."></div>
           </div>
           <div style="display:flex;align-items:center;gap:0.7rem;padding:0.3rem 10%;background:var(--bg-card);border-top:1px solid var(--rule);font-size:0.62rem;color:var(--ink-muted);flex-shrink:0">
             <span id="ntWriterStatus">Unsaved</span>
@@ -673,6 +660,15 @@
 
     </div><!-- /main-area -->
 
+    <!-- RIGHT DETAIL PANEL -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-inner" id="detailInner">
+        <div style="font-size:0.72rem;color:var(--ink-muted);font-style:italic;text-align:center;margin-top:2rem;line-height:1.6">
+          Select a folder<br>to see details
+        </div>
+      </div>
+    </div>
+
   </div><!-- /explorer -->
 
   <!-- STATUS BAR -->
@@ -682,7 +678,7 @@
     <span style="margin-left:auto" id="statusDate"></span>
   </div>
 
-  <!-- ── CUSTOMISE FOLDER MODAL ── -->
+  <!-- CUSTOMISE FOLDER MODAL -->
   <div class="modal-bg" id="customModal">
     <div class="modal-box">
       <button class="modal-close" onclick="closeModal()">✕</button>
@@ -714,7 +710,7 @@
     </div>
   </div>
 
-  <!-- ── CONTEXT MENU ── -->
+  <!-- CONTEXT MENU -->
   <div class="ctx-menu" id="ctxMenu">
     <div class="ctx-item" onclick="ctxOpen()">       📂 Open</div>
     <div class="ctx-item" onclick="ctxCustomise()">  🎨 Customise Icon</div>
@@ -723,7 +719,7 @@
     <div class="ctx-item ctx-danger" onclick="ctxDelete()">🗑️ Delete</div>
   </div>
 
-  <!-- ── CUSTOM THEME EDITOR ── -->
+  <!-- CUSTOM THEME EDITOR -->
   <div class="theme-modal-bg" id="themeModal">
     <div class="theme-modal-box">
       <button class="modal-close" onclick="closeThemeEditor()">✕</button>
@@ -774,53 +770,45 @@
   </div>
 
   <script type="module" src="dashboard.js"></script>
-
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
   </script>
-
   <script>
-    /* ── Inline nav collapse toggle ── */
-    function toggleInlineNav() {
-      document.getElementById('inlineNav').classList.toggle('open');
+    /* Collapsible sidebar sections */
+    function toggleSbSection(id) {
+      document.getElementById(id).classList.toggle('collapsed');
     }
 
-    /* ── Profile modal helpers (wired to onclick) ── */
-    function openProfile()  { document.getElementById('profileModal').style.display = 'flex'; }
-    function closeProfile() { document.getElementById('profileModal').style.display = 'none'; }
-
-    /* ── Nav chip active state + panel switching ──
-       This runs immediately and also patches window.sideNav once the
-       dashboard module loads its own version.                          */
-    function _activateChip(nav) {
-      document.querySelectorAll('.nav-chip').forEach(c => c.classList.remove('active'));
-      const chip = document.querySelector(`.nav-chip[data-nav="${nav}"]`);
-      if (chip) chip.classList.add('active');
+    /* Student settings modal */
+    function openProfile() {
+      var m = document.getElementById('profileModal');
+      if (m) m.style.display = 'flex';
     }
+    function closeProfile() {
+      var m = document.getElementById('profileModal');
+      if (m) m.style.display = 'none';
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      var m = document.getElementById('profileModal');
+      if (m) m.addEventListener('click', function(e) { if (e.target === m) closeProfile(); });
+    });
 
-    /* Patch: wrap dashboard.js sideNav to also update chip states */
-    const _patchSideNav = () => {
+    /* Patch sideNav to keep sidebar .sb-item active state in sync */
+    (function patchSideNav() {
       if (typeof window.sideNav === 'function') {
-        const _orig = window.sideNav;
+        var _orig = window.sideNav;
         window.sideNav = function(el, nav) {
-          _activateChip(nav);
+          document.querySelectorAll('.sb-item[data-nav]').forEach(function(item) {
+            item.classList.toggle('active', item.dataset.nav === nav);
+          });
           _orig(el, nav);
         };
-        return;
-      }
-      setTimeout(_patchSideNav, 80);
-    };
-    setTimeout(_patchSideNav, 80);
+      } else { setTimeout(patchSideNav, 60); }
+    })();
 
-    /* Ensure all onclick="sideNav(this,'x')" calls on chips also work
-       even before the module loads (they queue until the module exposes
-       sideNav on window, which the existing _ready loop already handles). */
-
-    /* ── Deferred function availability check (from original) ── */
-    const _ready = () => {
-      const fns = ['sideNav','openFolder','showHome','openCustomise','closeModal',
+    /* Deferred readiness check so onclick attrs work before module loads */
+    (function _ready() {
+      var fns = ['sideNav','openFolder','showHome','openCustomise','closeModal',
         'applyCustomise','ctxOpen','ctxCustomise','ctxRename','ctxDelete',
         'openThemeEditor','closeThemeEditor','applyTheme','resetTheme','setView',
         'toggleDetail','openAddSubjectSidebar','confirmAddSubjectSidebar',
@@ -829,14 +817,10 @@
         'examOpenImport','examCloseImport','examImportTab','examImportGCal',
         'examImportICS','examImportNotion','ntOpenWrittenNoteEditor','ntSaveWrittenNote',
         'ntCancelWrittenNote','ntWExec','ntInsertCallout','notesGoBack','notesQuickUpload',
-        'enterFlashcardMode','fcStep','fcShuffle','renderNotesSubjectView','openNotesSubject',
-        'pomEnterFullscreen','pomExitFullscreen','pomFsDoToggle','pomFsDoReset','pomFsDoSkip',
-        'quickStartSubject','openSubjFolderCustomise','calRender','examCalShowDay',
-        'revFullscreen','ctxRenameSubj','ctxDeleteSubj'];
-      if (fns.every(f => window[f])) return;
-      setTimeout(_ready, 50);
-    };
-    setTimeout(_ready, 50);
+        'enterFlashcardMode','fcStep','fcShuffle','pomEnterFullscreen','pomExitFullscreen',
+        'pomFsDoToggle','pomFsDoReset','pomFsDoSkip'];
+      if (!fns.every(function(f){ return typeof window[f]==='function'; })) setTimeout(_ready, 60);
+    })();
   </script>
 </body>
 </html>
